@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ModaStyle — Audit de conformité</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#0f172a;--ink2:#334155;--ink3:#64748b;--ink4:#94a3b8;--bg:#f8fafc;--white:#fff;--red:#dc2626;--red-bg:#fef2f2;--red-border:#fecaca;--orange:#ea580c;--orange-bg:#fff7ed;--orange-border:#fed7aa;--green:#16a34a;--green-bg:#f0fdf4;--green-border:#bbf7d0;--blue:#2563eb;--blue-bg:#eff6ff;--blue-border:#bfdbfe;--border:#e2e8f0;--border2:#cbd5e1;--ff:'DM Sans',sans-serif;--ffm:'JetBrains Mono',monospace;--ffd:'Playfair Display',serif;--r:12px;--r2:8px;--r3:6px;--sh:0 1px 3px rgba(0,0,0,.06)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--ff);background:var(--bg);color:var(--ink);font-size:14px;line-height:1.6;overflow-x:hidden}
+
+#splash{position:fixed;inset:0;z-index:99999;background:var(--ink);display:flex;align-items:center;justify-content:center;transition:opacity .6s,visibility .6s}
+#splash.hidden{opacity:0;visibility:hidden;pointer-events:none}
+.splash-box{max-width:560px;width:92%;text-align:center}
+.splash-logo{font-family:var(--ffd);font-size:32px;font-weight:900;color:var(--white);letter-spacing:3px;margin-bottom:6px}
+.splash-logo em{color:var(--red);font-style:normal}
+.splash-sub{color:var(--ink4);font-size:13px;letter-spacing:2px;text-transform:uppercase;margin-bottom:32px}
+.splash-brief{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:var(--r);padding:24px;text-align:left;margin-bottom:24px}
+.splash-brief p{color:rgba(255,255,255,.75);font-size:13.5px;line-height:1.8;margin-bottom:10px}
+.splash-brief strong{color:#fff}
+.splash-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.sf{width:100%;padding:12px 16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:var(--r2);color:#fff;font-family:var(--ff);font-size:14px;outline:none;transition:.2s}
+.sf:focus{border-color:var(--blue);background:rgba(255,255,255,.1)}
+.sf::placeholder{color:var(--ink4)}
+.sf-full{width:100%;margin-bottom:20px}
+.splash-start{width:100%;padding:14px;background:var(--red);color:#fff;border:none;border-radius:var(--r2);font-family:var(--ff);font-size:15px;font-weight:700;cursor:pointer;letter-spacing:1px;transition:.2s}
+.splash-start:hover{background:#b91c1c}
+.splash-start:disabled{opacity:.4;cursor:not-allowed}
+
+#topbar{position:fixed;top:0;left:0;right:0;z-index:9999;height:54px;background:var(--white);border-bottom:1px solid var(--border);box-shadow:var(--sh);display:none;align-items:center;padding:0 14px;gap:10px}
+.tb-logo{font-family:var(--ffd);font-size:17px;font-weight:900;color:var(--ink);letter-spacing:2px;white-space:nowrap}
+.tb-logo em{color:var(--red);font-style:normal}
+.tb-sep{width:1px;height:26px;background:var(--border);flex-shrink:0}
+.tb-names{font-size:10px;color:var(--ink3);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tb-tabs{display:flex;gap:0;flex:1;overflow-x:auto;scrollbar-width:none}
+.tb-tabs::-webkit-scrollbar{display:none}
+.tb-tab{padding:0 10px;height:54px;display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--ink3);cursor:pointer;white-space:nowrap;border-bottom:3px solid transparent;margin-bottom:-1px;transition:.15s}
+.tb-tab:hover{color:var(--ink)}
+.tb-tab.active{color:var(--ink);border-bottom-color:var(--red)}
+.tb-tab.phase-tab{color:var(--blue);font-weight:700}
+.tb-tab.phase-tab.active{border-bottom-color:var(--blue)}
+.tb-num{font-family:var(--ffm);font-size:9px;color:var(--ink4);background:var(--bg);padding:1px 5px;border-radius:4px}
+.tb-score-zone{margin-left:auto;display:flex;align-items:center;gap:8px;flex-shrink:0}
+.tb-timer{font-family:var(--ffm);font-size:13px;font-weight:700;color:var(--ink);background:var(--bg);padding:4px 10px;border-radius:var(--r3);border:1px solid var(--border)}
+.tb-timer.urgent{color:var(--red);border-color:var(--red-border);background:var(--red-bg);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+.tb-score{font-family:var(--ffm);font-size:14px;font-weight:700;color:var(--white);background:var(--ink);padding:4px 12px;border-radius:var(--r3)}
+.tb-score .pts{color:var(--green)}
+.tb-errors{font-family:var(--ffm);font-size:12px;font-weight:700;color:var(--red);background:var(--red-bg);padding:4px 10px;border-radius:var(--r3);border:1px solid var(--red-border)}
+
+.tab-content{display:none;padding-top:54px}
+.tab-content.active{display:block}
+.page{max-width:820px;margin:0 auto;padding:28px 18px 80px}
+
+.phase-header{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:24px 28px;margin-bottom:24px;position:relative;overflow:hidden}
+.phase-header::before{content:'';position:absolute;left:0;top:0;bottom:0;width:5px}
+.phase-header.p1::before{background:var(--red)}
+.phase-header.p2::before{background:var(--blue)}
+.phase-header.p3::before{background:var(--green)}
+.phase-tag{font-family:var(--ffm);font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px}
+.phase-header.p1 .phase-tag{color:var(--red)}
+.phase-header.p2 .phase-tag{color:var(--blue)}
+.phase-header.p3 .phase-tag{color:var(--green)}
+.phase-title{font-family:var(--ffd);font-size:22px;font-weight:800;color:var(--ink);margin-bottom:4px}
+.phase-desc{font-size:13px;color:var(--ink3);line-height:1.7}
+
+/* Cards */
+.q-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);margin-bottom:16px;overflow:hidden;transition:all .3s}
+.q-card.card-locked{position:relative}
+.q-card.card-locked::after{content:'CAS VERROUILLÉ';position:absolute;inset:0;background:rgba(15,23,42,.75);display:flex;align-items:center;justify-content:center;font-family:var(--ffm);font-size:15px;font-weight:700;color:#fff;letter-spacing:4px;border-radius:var(--r);z-index:10}
+.q-head{padding:14px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border);background:var(--bg)}
+.q-num{width:30px;height:30px;border-radius:50%;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--ffm);font-size:12px;font-weight:700;flex-shrink:0}
+.q-num.blue{background:var(--blue)}
+.q-num.green{background:var(--green)}
+.q-title{font-size:13px;font-weight:700;color:var(--ink)}
+.q-source{font-size:11px;color:var(--ink3);margin-top:1px}
+.q-status{margin-left:auto;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap;display:none}
+.q-status.show{display:block}
+.q-status.s-ok{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.q-status.s-part{background:var(--orange-bg);color:var(--orange);border:1px solid var(--orange-border)}
+.q-status.s-fail{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+.q-body{padding:16px 20px}
+
+.q-clause{background:var(--red-bg);border-left:4px solid var(--red);padding:12px 16px;border-radius:0 var(--r3) var(--r3) 0;margin-bottom:16px;font-size:13px;color:#7f1d1d;line-height:1.7;font-style:italic}
+.q-clause strong{font-style:normal;color:var(--red)}
+
+.q-navigate{background:var(--blue-bg);border:1px solid var(--blue-border);border-radius:var(--r2);padding:14px 16px;margin-bottom:16px;font-size:13px;color:#1e40af;line-height:1.7;text-align:center}
+.q-navigate strong{color:#1e3a8a}
+
+.q-tool{background:#f0f9ff;border:1px solid var(--blue-border);border-radius:var(--r2);padding:14px 16px;margin-bottom:16px;font-size:12.5px;color:#1e40af;line-height:1.7}
+.q-tool-tag{font-family:var(--ffm);font-size:9px;font-weight:700;background:var(--blue);color:#fff;padding:2px 7px;border-radius:4px;display:inline-block;margin-bottom:6px;letter-spacing:1px}
+
+/* Steps */
+.step{margin-bottom:14px;position:relative}
+.step.locked{opacity:.3;pointer-events:none}
+.step-label{font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.step-badge{font-family:var(--ffm);font-size:9px;background:var(--blue);color:#fff;padding:1px 6px;border-radius:10px}
+.sel{width:100%;padding:10px 14px;font-family:var(--ff);font-size:13px;color:var(--ink);background:#fff;border:2px solid var(--border);border-radius:var(--r2);outline:none;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2394a3b8'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:30px;cursor:pointer;transition:.2s}
+.sel:focus{border-color:var(--blue)}
+.sel:disabled{background:var(--bg);cursor:not-allowed;opacity:.6}
+.sel.ok{border-color:var(--green);background:var(--green-bg)}
+.sel.half{border-color:var(--orange);background:var(--orange-bg)}
+.sel.fail{border-color:var(--red);background:var(--red-bg)}
+
+.fb{font-size:12px;margin-top:6px;padding:8px 12px;border-radius:var(--r3);display:none;align-items:center;gap:8px;font-weight:600}
+.fb.show{display:flex}
+.fb.fb-warn{background:var(--orange-bg);color:var(--orange);border:1px solid var(--orange-border)}
+.fb.fb-fail{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+.fb.fb-ok{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.pen{font-family:var(--ffm);font-size:10px;font-weight:700;background:var(--orange);color:#fff;padding:1px 6px;border-radius:4px}
+
+/* Radio */
+.rg{display:flex;flex-direction:column;gap:6px}
+.ro{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border:2px solid var(--border);border-radius:var(--r2);cursor:pointer;transition:.15s;background:#fff}
+.ro:hover{border-color:var(--ink4);background:var(--bg)}
+.ro.sel{border-color:var(--blue);background:var(--blue-bg)}
+.ro.r-ok{border-color:var(--green);background:var(--green-bg);pointer-events:none}
+.ro.r-fail{border-color:var(--red);background:var(--red-bg);opacity:.4;pointer-events:none;text-decoration:line-through}
+.ro.r-dead{pointer-events:none;opacity:.25;text-decoration:line-through}
+.ro.r-off{pointer-events:none;opacity:.5}
+.rd{width:18px;height:18px;border-radius:50%;border:2px solid var(--border2);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:.15s;font-size:10px;font-weight:800;color:#fff}
+.ro.sel .rd{border-color:var(--blue);background:var(--blue)}
+.ro.r-ok .rd{border-color:var(--green);background:var(--green)}
+.ro.r-fail .rd{border-color:var(--red);background:var(--red)}
+.rt{font-size:12.5px;color:var(--ink);line-height:1.6}
+.vbtn{margin-top:8px;padding:8px 20px;background:var(--blue);color:#fff;border:none;border-radius:var(--r3);font-family:var(--ff);font-size:12px;font-weight:700;cursor:pointer;transition:.15s}
+.vbtn:hover{background:#1d4ed8}
+.vbtn:disabled{opacity:.4;cursor:not-allowed}
+
+/* Conditions checkboxes */
+.cg{display:flex;flex-direction:column;gap:6px}
+.co{display:flex;align-items:center;gap:10px;padding:8px 12px;border:2px solid var(--border);border-radius:var(--r3);cursor:pointer;transition:.15s;font-size:12.5px}
+.co:hover{border-color:var(--ink4)}
+.co.ck{border-color:var(--blue);background:var(--blue-bg)}
+.co.c-ok{border-color:var(--green);background:var(--green-bg);pointer-events:none}
+.co.c-fail{border-color:var(--red);background:var(--red-bg);pointer-events:none;text-decoration:line-through}
+.co.c-off{pointer-events:none;opacity:.6}
+.cb{width:16px;height:16px;border:2px solid var(--border2);border-radius:3px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:.15s;font-size:9px;font-weight:800;color:#fff}
+.co.ck .cb{background:var(--blue);border-color:var(--blue)}
+.co.c-ok .cb{background:var(--green);border-color:var(--green)}
+.co.c-fail .cb{background:var(--red);border-color:var(--red)}
+
+/* Phase 3 comparatif */
+.cv{padding:12px 16px;border:2px solid var(--border);border-radius:var(--r2);cursor:pointer;transition:.15s;margin-bottom:8px}
+.cv:hover{border-color:var(--ink4)}
+.cv.cv-sel{border-color:var(--blue);background:var(--blue-bg)}
+.cv.cv-ok{border-color:var(--green);background:var(--green-bg);pointer-events:none}
+.cv.cv-fail{border-color:var(--red);background:var(--red-bg);pointer-events:none}
+.cv.cv-off{pointer-events:none;opacity:.5}
+.cv-lbl{font-family:var(--ffm);font-size:10px;font-weight:700;color:var(--ink3);margin-bottom:4px}
+.cv-txt{font-size:12.5px;color:var(--ink);line-height:1.7}
+.err-zone{margin-top:8px;padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r3);display:none}
+.err-zone.show{display:block}
+
+/* Etape blocks */
+.eb{border:1px solid var(--border);border-radius:var(--r2);margin-bottom:12px;overflow:hidden}
+.eb.locked{opacity:.3;pointer-events:none}
+.eb-head{padding:10px 14px;background:var(--bg);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.eb-num{font-family:var(--ffm);font-size:9px;font-weight:700;background:var(--blue);color:#fff;padding:2px 7px;border-radius:10px}
+.eb-lbl{font-size:12px;font-weight:700;color:var(--ink2)}
+.eb-body{padding:12px 14px}
+
+/* Btn */
+.phase-btn{display:none;width:100%;padding:14px;color:#fff;border:none;border-radius:var(--r2);font-family:var(--ff);font-size:15px;font-weight:700;cursor:pointer;letter-spacing:1px;margin-top:8px;transition:.15s}
+.phase-btn:hover{filter:brightness(.9)}
+
+/* Final */
+#final{display:none;position:fixed;inset:0;z-index:99998;background:var(--ink);align-items:center;justify-content:center}
+#final.show{display:flex}
+.final-box{max-width:520px;width:92%;text-align:center}
+.final-score-big{font-family:var(--ffm);font-size:64px;font-weight:700;color:var(--green);margin-bottom:4px}
+.final-det{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:var(--r);padding:20px;text-align:left;margin-bottom:24px}
+.final-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px;color:rgba(255,255,255,.6)}
+.final-row:last-child{border-bottom:none}
+.final-row span:last-child{font-family:var(--ffm);font-weight:700;color:#fff}
+.final-btn{width:100%;padding:14px;background:var(--green);color:#fff;border:none;border-radius:var(--r2);font-family:var(--ff);font-size:15px;font-weight:700;cursor:pointer;letter-spacing:1px}
+
+/* Animations */
+@keyframes shake{0%,100%{transform:translateX(0)}10%,30%,50%,70%,90%{transform:translateX(-4px)}20%,40%,60%,80%{transform:translateX(4px)}}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.3)}100%{transform:scale(1)}}
+.anim-shake{animation:shake .5s ease}
+.anim-pop{animation:pop .3s ease}
+
+/* Site pages */
+.site-bar{background:var(--red);color:#fff;text-align:center;font-size:11px;padding:8px;letter-spacing:1.5px;font-weight:500}
+.sp{max-width:700px;margin:0 auto;padding:24px 18px 60px}
+.sp h2{font-family:var(--ffd);font-size:20px;font-weight:800;color:var(--ink);margin-bottom:18px;padding-bottom:10px;border-bottom:2px solid var(--border)}
+.sc{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:12px}
+.sc h3{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--ink);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.sc p{font-size:12.5px;color:var(--ink2);line-height:1.75;margin-bottom:6px}
+.stag{font-family:var(--ffm);font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;display:inline-block}
+.stag.info{background:var(--blue-bg);color:var(--blue)}
+.stag.warn{background:var(--orange-bg);color:var(--orange)}
+/* Product */
+.pp{display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:800px;margin:0 auto;padding:24px 18px}
+@media(max-width:700px){.pp{grid-template-columns:1fr}}
+.pp-img{background:linear-gradient(135deg,var(--blue),var(--ink));border-radius:var(--r);aspect-ratio:4/5;position:relative;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.85);font-size:16px;font-weight:700;text-align:center}
+.pp-bdg{position:absolute;top:12px;font-family:var(--ffm);font-size:11px;font-weight:700;padding:4px 10px;border-radius:4px}
+.pp-bdg.promo{left:12px;background:var(--red);color:#fff}
+.pp-bdg.new{right:12px;background:var(--ink);color:#fff}
+.pp-info h1{font-family:var(--ffd);font-size:22px;font-weight:800;color:var(--ink);margin-bottom:6px}
+.pp-ref{font-size:11px;color:var(--ink4);margin-bottom:4px}
+.pp-stars{color:var(--orange);font-size:14px;margin-bottom:2px}
+.pp-rev{font-size:11px;color:var(--ink3);margin-bottom:14px}
+.pp-old{font-size:16px;color:var(--ink4);text-decoration:line-through;margin-right:8px}
+.pp-new{font-size:22px;font-weight:800;color:var(--red)}
+.pp-save{font-size:12px;color:var(--green);font-weight:700;margin-left:8px}
+.pp-note{font-size:11px;color:var(--ink3);margin:4px 0 14px}
+.pp-btn{width:100%;padding:12px;border:none;border-radius:var(--r2);font-family:var(--ff);font-size:13px;font-weight:700;cursor:pointer;margin-bottom:8px;letter-spacing:1px;text-transform:uppercase}
+.pp-btn.primary{background:var(--red);color:#fff}
+.pp-btn.secondary{background:#fff;color:var(--ink);border:2px solid var(--ink)}
+.pp-feat{list-style:none;margin-top:14px;border-top:1px solid var(--border);padding-top:10px}
+.pp-feat li{padding:5px 0;font-size:12px;color:var(--ink2);display:flex;gap:6px}
+.pp-feat li::before{content:'✓';color:var(--green);font-weight:700;flex-shrink:0}
+.pp-alert{padding:10px 14px;font-size:11.5px;margin:8px 0;border-radius:0 var(--r3) var(--r3) 0;line-height:1.65}
+.pp-alert.danger{background:var(--red-bg);border-left:4px solid var(--red);color:#7f1d1d}
+.pp-alert.warning{background:var(--orange-bg);border-left:4px solid var(--orange);color:#7c2d12}
+/* Commande */
+.cmd{max-width:620px;margin:0 auto;padding:24px 18px}
+.cmd h2{font-family:var(--ffd);font-size:20px;font-weight:800;margin-bottom:18px}
+.cmd-sum{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:16px}
+.cmd-r{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--bg);font-size:13px}
+.cmd-r.tot{font-weight:800;font-size:14px;border-bottom:none;padding-top:10px}
+.cmd-sec{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:12px}
+.cmd-sec h3{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.cmd-f{margin-bottom:10px}
+.cmd-f label{display:block;font-size:10px;font-weight:600;color:var(--ink3);margin-bottom:3px}
+.cmd-f input{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--r3);font-size:13px;font-family:var(--ff)}
+.cmd-cb{display:flex;align-items:flex-start;gap:7px;padding:6px 0;font-size:11.5px;color:var(--ink2);line-height:1.5}
+.cmd-cb input[type=checkbox]{width:14px;height:14px;margin-top:2px;flex-shrink:0}
+.cmd-cbx{background:var(--orange-bg);border:1px solid var(--orange-border);border-radius:4px;padding:7px 9px;margin:4px 0}
+.cmd-pay{width:100%;padding:14px;background:var(--red);color:#fff;border:none;border-radius:var(--r2);font-family:var(--ff);font-size:14px;font-weight:700;cursor:pointer;letter-spacing:1px;text-transform:uppercase;margin-top:8px}
+/* Affirmations */
+.aff{background:#fff;border:1px solid var(--border);border-radius:var(--r);margin-bottom:14px;overflow:hidden}
+.aff-head{padding:12px 18px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);background:var(--bg)}
+.aff-num{font-family:var(--ffm);font-size:10px;font-weight:700;background:var(--green);color:#fff;padding:2px 8px;border-radius:10px}
+.aff-body{padding:14px 18px}
+.aff-text{font-size:13.5px;color:var(--ink);line-height:1.7;font-style:italic;padding:12px 16px;background:var(--bg);border-radius:var(--r3);border-left:4px solid var(--ink3);margin-bottom:14px}
+.aff-vf{display:flex;gap:8px;margin-bottom:10px}
+.aff-btn{flex:1;padding:10px;border:2px solid var(--border);border-radius:var(--r2);background:#fff;font-family:var(--ff);font-size:13px;font-weight:700;cursor:pointer;transition:.15s;text-align:center}
+.aff-btn:hover{border-color:var(--ink4)}
+.aff-btn.sel{border-color:var(--blue);background:var(--blue-bg);color:var(--blue)}
+.aff-btn.a-ok{border-color:var(--green);background:var(--green-bg);color:var(--green)}
+.aff-btn.a-fail{border-color:var(--red);background:var(--red-bg);color:var(--red)}
+.aff-btn.a-off{pointer-events:none;opacity:.4}
+.aff-just{display:none;margin-top:10px}
+.aff-just.show{display:block}
+
+/* Drag & drop */
+.dd-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px}
+@media(max-width:700px){.dd-grid{grid-template-columns:1fr}}
+.dd-col{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:12px}
+.dd-col-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--ink3);margin-bottom:10px;text-align:center}
+.dd-pool{min-height:60px;display:flex;flex-direction:column;gap:6px}
+.dd-item{padding:8px 12px;background:var(--bg);border:2px solid var(--border);border-radius:var(--r3);font-size:11.5px;color:var(--ink);cursor:grab;transition:.15s;line-height:1.5;user-select:none}
+.dd-item:active{cursor:grabbing;opacity:.8}
+.dd-item.dragging{opacity:.4;border-style:dashed}
+.dd-item.dd-correct{background:var(--green-bg);border-color:var(--green);cursor:default}
+.dd-item.dd-wrong{background:var(--red-bg);border-color:var(--red);cursor:default}
+.dd-item.dd-picked{border-color:var(--blue);background:var(--blue-bg);color:var(--blue);font-weight:700}
+.dd-item.dd-used{display:none}
+.dd-item.dd-intrus{background:var(--orange-bg);border-color:var(--orange);font-style:italic}
+.dd-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px;min-height:50px}
+@media(max-width:700px){.dd-row{grid-template-columns:1fr}}
+.dd-slot{border:2px dashed var(--border2);border-radius:var(--r3);padding:8px;min-height:44px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--ink4);transition:.15s}
+.dd-slot.dragover{border-color:var(--blue);background:var(--blue-bg)}
+.dd-slot.filled{border-style:solid;border-color:var(--blue);background:var(--blue-bg)}
+.dd-slot.slot-ok{border-color:var(--green);background:var(--green-bg)}
+.dd-slot.slot-fail{border-color:var(--red);background:var(--red-bg)}
+
+/* Note finale */
+.note-big{font-family:var(--ffd);font-size:80px;font-weight:900;margin-bottom:0}
+.note-ok{color:var(--green)}
+.note-mid{color:var(--orange)}
+.note-low{color:var(--red)}
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+<div class="splash-box">
+  <div class="splash-logo">MODA<em>STYLE</em></div>
+  <div class="splash-sub">Audit de conformité juridique</div>
+  <div class="splash-brief">
+    <p><strong>Objet :</strong> Mission d'audit préalable au lancement commercial</p>
+    <p>Votre cabinet est mandaté pour un <strong>audit de conformité du site e-commerce ModaStyle</strong>. Vous disposez de <strong>75 minutes</strong>.</p>
+    <p><strong>Méthode :</strong> Pour chaque question, vous devez <strong>naviguer dans les onglets du site</strong> (① à ⑤) pour trouver et analyser les clauses problématiques. Les clauses ne sont pas reproduites dans les questions — vous devez les chercher vous-même.</p>
+    <p>Vous disposez de <strong>deux tentatives par question</strong> — la seconde à 50 % des points. Chaque erreur est comptabilisée dans votre rapport final.</p>
+  </div>
+  <div class="splash-fields">
+    <input class="sf" id="n1" placeholder="Nom Prénom — Étudiant(e) 1" autocomplete="off">
+    <input class="sf" id="n2" placeholder="Nom Prénom — Étudiant(e) 2" autocomplete="off">
+  </div>
+  <input class="sf sf-full" id="grp" placeholder="Groupe (ex : G3-SME)" autocomplete="off">
+  <button class="splash-start" id="go" disabled onclick="launch()">Lancer l'audit</button>
+</div>
+</div>
+
+<!-- TOPBAR -->
+<div id="topbar">
+  <div class="tb-logo">MODA<em>STYLE</em></div>
+  <div class="tb-sep"></div>
+  <div class="tb-names" id="tbn"></div>
+  <div class="tb-sep"></div>
+  <div class="tb-tabs" id="tbtabs">
+    <div class="tb-tab phase-tab active" data-tab="phase1" onclick="tab('phase1',this)">📋 Diagnostic</div>
+    <div class="tb-sep" style="margin:0 2px"></div>
+    <div class="tb-tab" data-tab="s-prod" onclick="tab('s-prod',this)"><span class="tb-num">①</span> Produit</div>
+    <div class="tb-tab" data-tab="s-cmd" onclick="tab('s-cmd',this)"><span class="tb-num">②</span> Commande</div>
+    <div class="tb-tab" data-tab="s-liv" onclick="tab('s-liv',this)"><span class="tb-num">③</span> Livraison</div>
+    <div class="tb-tab" data-tab="s-cgv" onclick="tab('s-cgv',this)"><span class="tb-num">④</span> CGV</div>
+    <div class="tb-tab" data-tab="s-leg" onclick="tab('s-leg',this)"><span class="tb-num">⑤</span> Mentions</div>
+  </div>
+  <div class="tb-score-zone">
+    <div class="tb-errors" id="tb-err">0 erreur</div>
+    <div class="tb-timer" id="tmr">75:00</div>
+    <div class="tb-score"><span class="pts" id="sc">0</span>/166</div>
+  </div>
+</div>
+
+<!-- ═══ SITE PAGES ═══ -->
+<div id="tab-s-prod" class="tab-content">
+<div class="site-bar">🚚 LIVRAISON OFFERTE DÈS 80€ · RETOURS 30 JOURS · SERVICE CLIENT 7J/7</div>
+<div class="pp">
+  <div class="pp-img">
+    <div class="pp-bdg promo">−40%</div>
+    <div class="pp-bdg new">NEW</div>
+    <div>Veste Urban Pro X7<br><span style="font-size:11px;font-weight:400;opacity:.6">ModaStyle · AH 2026</span></div>
+  </div>
+  <div class="pp-info">
+    <p class="pp-ref">Réf. MS-VUP-X7-2026 · Collection AH 2026</p>
+    <h1>Veste Urban Pro X7</h1>
+    <div class="pp-stars">★★★★★</div>
+    <p class="pp-rev">4,8/5 · 127 avis vérifiés ℹ️</p>
+    <div><span class="pp-old">279,00 €</span><span class="pp-new">167,40 €</span><span class="pp-save">−111,60 €</span></div>
+    <p class="pp-note">Prix promotionnel · Offre limitée</p>
+    <button class="pp-btn primary">Ajouter au panier</button>
+    <button class="pp-btn secondary">♡ Ajouter à ma liste</button>
+    <ul class="pp-feat">
+      <li>Coque extérieure softshell imperméable 3 couches (20 000 mm)</li>
+      <li>Doublure thermique amovible — isolation PrimaLoft® 60g</li>
+      <li>8 poches fonctionnelles dont 2 poches cargo magnétiques</li>
+      <li>Col montant coupe-vent avec mentonnière intégrée</li>
+      <li>Bandes réfléchissantes pour visibilité nocturne</li>
+      <li>Compatible toutes conditions jusqu'à −15 °C</li>
+    </ul>
+    <div class="pp-alert danger">⚠️ Important : Toute réclamation relative à un défaut doit être formulée dans un délai de 48 heures suivant la réception. Passé ce délai, ModaStyle ne pourra être tenu responsable.</div>
+    <div class="pp-alert warning">ℹ️ Ce produit étant susceptible d'être porté à même la peau, il est exclu du droit de retour conformément aux règles d'hygiène pour les articles de sport et vêtements techniques.</div>
+  </div>
+</div>
+</div>
+
+<div id="tab-s-cmd" class="tab-content">
+<div class="site-bar">🚚 LIVRAISON OFFERTE DÈS 80€ · RETOURS 30 JOURS · SERVICE CLIENT 7J/7</div>
+<div class="cmd">
+  <h2>Récapitulatif &amp; validation</h2>
+  <div class="cmd-sum">
+    <div class="cmd-r"><span>Veste Urban Pro X7 — M</span><span>167,40 €</span></div>
+    <div class="cmd-r"><span>Livraison</span><span>Offerte</span></div>
+    <div class="cmd-r tot"><span>Total TTC</span><span>167,40 €</span></div>
+  </div>
+  <div class="cmd-sec"><h3>Coordonnées</h3>
+    <div class="cmd-f"><label>Nom complet</label><input type="text" placeholder="Jean Dupont"></div>
+    <div class="cmd-f"><label>Email</label><input type="email" placeholder="jean.dupont@email.com"></div>
+    <div class="cmd-f"><label>Adresse de livraison</label><input type="text" placeholder="15 rue des Lilas, 75011 Paris"></div>
+  </div>
+  <div class="cmd-sec"><h3>Préférences &amp; données personnelles</h3>
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r3);padding:12px;margin-bottom:10px">
+      <p style="font-size:11.5px;color:var(--ink2);line-height:1.7;margin-bottom:10px">ModaStyle collecte vos données personnelles dans le cadre de votre commande. En finalisant votre achat, vous acceptez leur utilisation à des fins de gestion de commande, fidélisation et amélioration de nos services.</p>
+      <div class="cmd-cbx"><div class="cmd-cb"><input type="checkbox" checked><span>J'accepte de recevoir la newsletter ModaStyle avec les dernières tendances, offres exclusives et avant-premières.</span></div></div>
+      <div class="cmd-cbx"><div class="cmd-cb"><input type="checkbox" checked><span>J'accepte que mes données personnelles (nom, email, historique d'achats) soient transmises aux partenaires commerciaux de ModaStyle à des fins de prospection ciblée.</span></div></div>
+      <div class="cmd-cb" style="margin-top:6px"><input type="checkbox"><span>Je souhaite m'opposer à la réception de communications de tiers (si non cochée, vous acceptez par défaut).</span></div>
+    </div>
+  </div>
+  <div class="cmd-sec"><h3>Paiement sécurisé</h3>
+    <div class="cmd-f"><label>Numéro de carte</label><input type="text" placeholder="•••• •••• •••• ••••"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="cmd-f"><label>Expiration</label><input type="text" placeholder="MM/AA"></div>
+      <div class="cmd-f"><label>Cryptogramme</label><input type="text" placeholder="•••"></div>
+    </div>
+  </div>
+  <button class="cmd-pay">Confirmer et payer 167,40 €</button>
+  <p style="font-size:10px;color:var(--ink4);text-align:center;margin-top:7px">En cliquant, vous acceptez nos conditions générales de vente.</p>
+</div>
+</div>
+
+<div id="tab-s-liv" class="tab-content">
+<div class="site-bar">🚚 LIVRAISON OFFERTE DÈS 80€ · RETOURS 30 JOURS · SERVICE CLIENT 7J/7</div>
+<div class="sp">
+  <h2>Livraison &amp; politique de retour</h2>
+  <div class="sc"><h3>Délais de livraison</h3><p>ModaStyle s'engage à expédier votre commande dans les meilleurs délais suivant confirmation du paiement. L'expédition intervient sous 1 à 3 jours ouvrés selon disponibilité.</p><p>ModaStyle ne saurait être tenu responsable des retards imputables aux transporteurs.</p></div>
+  <div class="sc"><h3>Retours &amp; échanges</h3><p>Délai de 30 jours pour retourner votre article (hors exclusions — voir fiche produit).</p><p>Frais de retour : à la charge du client. Des frais de traitement de 9,90 € seront déduits du remboursement.</p></div>
+  <div class="sc"><h3>Remboursements</h3><p>Remboursement traité dans un délai de 30 à 45 jours sur le mode de paiement initial.</p><p><span class="stag info">INFO</span> Délais variables selon votre établissement bancaire.</p></div>
+  <div class="sc"><h3>Garantie</h3><p>La Veste Urban Pro X7 bénéficie d'une garantie constructeur ModaStyle de 12 mois. Cette garantie se substitue à toute autre garantie légale ou conventionnelle.</p><p><span class="stag warn">ATTENTION</span> Toute modification du produit entraîne la perte immédiate de la garantie.</p></div>
+</div>
+</div>
+
+<div id="tab-s-cgv" class="tab-content">
+<div class="site-bar">🚚 LIVRAISON OFFERTE DÈS 80€ · RETOURS 30 JOURS · SERVICE CLIENT 7J/7</div>
+<div class="sp">
+  <h2>Conditions Générales de Vente</h2>
+  <p style="font-size:10px;color:var(--ink4);font-family:var(--ffm);margin-bottom:18px">ModaStyle SAS · Version en vigueur · www.modastyle.fr</p>
+  <div class="sc"><h3>Article 1 — Acceptation et modification</h3><p>En passant commande, le client accepte les présentes CGV sans réserve. ModaStyle se réserve le droit de les modifier à tout moment et sans préavis. Les conditions applicables sont celles en vigueur à la date de consultation.</p></div>
+  <div class="sc"><h3>Article 2 — Prix</h3><p>Les prix sont susceptibles d'être modifiés sans notification préalable. ModaStyle pourra exceptionnellement réévaluer le prix facturé après acceptation de la commande si des circonstances exceptionnelles le justifient.</p></div>
+  <div class="sc"><h3>Article 3 — Formation de la commande</h3><p>La commande est réputée ferme et définitive dès validation du paiement. Aucune annulation ne pourra être acceptée.</p><p>Toute compensation de créances pourra être opérée unilatéralement et sans notification préalable.</p></div>
+  <div class="sc"><h3>Article 4 — Disponibilité</h3><p>Offres valables dans la limite des stocks disponibles. La rupture de stock constitue un cas de force majeure déchargeant ModaStyle de toute obligation d'exécution ou d'indemnisation au-delà du remboursement du prix.</p></div>
+  <div class="sc"><h3>Article 5 — Garanties</h3><p>Garantie commerciale ModaStyle : 12 mois. ModaStyle se réserve le droit exclusif de choisir entre réparation et remplacement.</p><p>Responsabilité limitée au montant de la commande. Aucun préjudice indirect ne pourra être réclamé.</p></div>
+  <div class="sc"><h3>Article 6 — Données personnelles</h3><p>Les données pourront être transmises à des tiers partenaires à des fins de prospection, sans accord spécifique du client.</p></div>
+  <div class="sc"><h3>Article 7 — Cession</h3><p>ModaStyle peut céder ce contrat à tout tiers, sans accord préalable du client. Le client sera informé dans un délai raisonnable.</p></div>
+  <div class="sc"><h3>Article 8 — Litiges</h3><p>Toute réclamation dans les 48 heures suivant réception. Passé ce délai, produits réputés conformes.</p><p>Compétence exclusive du Tribunal de Commerce de Lyon.</p><p>Forclusion après 6 mois, se substituant à tout délai légal.</p></div>
+</div>
+</div>
+
+<div id="tab-s-leg" class="tab-content">
+<div class="site-bar">🚚 LIVRAISON OFFERTE DÈS 80€ · RETOURS 30 JOURS · SERVICE CLIENT 7J/7</div>
+<div class="sp">
+  <h2>Informations légales</h2>
+  <div class="sc"><h3>Éditeur</h3><p>ModaStyle SAS · Capital : 150 000 € · RCS Lyon B 842 156 789<br>TVA : FR 12 842156789 · contact@modastyle.fr · 04 72 XX XX XX</p></div>
+  <div class="sc"><h3>Directeur de publication</h3><p>Mme Sophie Renard, Directrice Générale</p></div>
+  <div class="sc"><h3>Hébergement</h3><p>OVHcloud · 2 rue Kellermann · 59100 Roubaix</p></div>
+  <div class="sc"><h3>Données personnelles</h3><p>Pour exercer vos droits : dpo@modastyle.fr</p></div>
+</div>
+</div>
+
+<!-- ═══ PHASE 1 ═══ -->
+<div id="tab-phase1" class="tab-content active">
+<div class="page">
+  <div class="phase-header p1">
+    <div class="phase-tag">Phase 1 — Diagnostic rapide</div>
+    <div class="phase-title">Repérage et qualification</div>
+    <div class="phase-desc">8 zones problématiques ont été identifiées sur le site. Pour chacune, <strong>consultez l'onglet indiqué</strong>, lisez la clause en contexte, puis répondez aux 3 questions. La clause n'est pas reproduite ici — vous devez aller la chercher.</div>
+  </div>
+  <div id="p1box"></div>
+  <button class="phase-btn" id="btn-p2" style="background:var(--blue)" onclick="goP2()">Passer à l'analyse approfondie →</button>
+</div>
+</div>
+
+<!-- ═══ PHASE 2 ═══ -->
+<div id="tab-phase2" class="tab-content">
+<div class="page">
+  <div class="phase-header p2">
+    <div class="phase-tag">Phase 2 — Analyse approfondie</div>
+    <div class="phase-title">Raisonnement juridique</div>
+    <div class="phase-desc">4 cas pratiques. Identifiez l'article applicable, ses conditions, appliquez-les aux faits, puis déterminez la conséquence juridique. Chaque étape déverrouille la suivante.</div>
+  </div>
+  <div id="p2box"></div>
+  <button class="phase-btn" id="btn-p3" style="background:var(--green)" onclick="goP3()">Passer aux affirmations piégeuses →</button>
+</div>
+</div>
+
+<!-- ═══ PHASE 3 — AFFIRMATIONS ═══ -->
+<div id="tab-phase3" class="tab-content">
+<div class="page">
+  <div class="phase-header p3">
+    <div class="phase-tag">Phase 3 — Vrai ou Faux juridique</div>
+    <div class="phase-title">Affirmations piégeuses</div>
+    <div class="phase-desc">Un stagiaire a préparé un mémo sur le contrat de vente électronique. 12 de ses affirmations sont reproduites ci-dessous. Pour chacune, indiquez si elle est <strong>VRAIE</strong> ou <strong>FAUSSE</strong>, puis sélectionnez la justification correcte.</div>
+  </div>
+  <div id="p3box"></div>
+  <button class="phase-btn" id="btn-p4" style="background:var(--green)" onclick="goP4()">Passer au contrôle de conformité →</button>
+</div>
+</div>
+
+<!-- ═══ PHASE 4 — COMPARATIFS ═══ -->
+<div id="tab-phase4" class="tab-content">
+<div class="page">
+  <div class="phase-header" style="border-left:5px solid var(--violet)">
+    <div class="phase-tag" style="color:var(--violet)">Phase 4 — Contrôle de conformité</div>
+    <div class="phase-title">Évaluation de clauses réécrites</div>
+    <div class="phase-desc">Un collaborateur a réécrit 3 clauses problématiques de ModaStyle. Pour chacune, identifiez la version conforme parmi 4, puis repérez l'erreur dans chaque version incorrecte.</div>
+  </div>
+  <div id="p4box"></div>
+  <button class="phase-btn" id="btn-p5" style="display:block;background:var(--ink)" onclick="goP5()">Passer à la synthèse finale →</button>
+</div>
+</div>
+
+<!-- ═══ PHASE 5 — DRAG & DROP SYNTHÈSE ═══ -->
+<div id="tab-phase5" class="tab-content">
+<div class="page">
+  <div class="phase-header" style="border-left:5px solid var(--orange)">
+    <div class="phase-tag" style="color:var(--orange)">Phase 5 — Synthèse de l'audit</div>
+    <div class="phase-title">Tableau récapitulatif</div>
+    <div class="phase-desc">Reconstituez le tableau d'audit en associant chaque <strong>clause problématique</strong> de ModaStyle à son <strong>fondement juridique</strong> et à sa <strong>conséquence</strong>. Glissez-déposez les étiquettes dans les bonnes cases. Attention, il y a des intrus.</div>
+  </div>
+  <div id="p5box"></div>
+  <button class="phase-btn" id="btn-fin" style="display:block;background:var(--ink)" onclick="showFinal()">Terminer l'audit →</button>
+</div>
+</div>
+
+<!-- FINAL -->
+<div id="final">
+<div class="final-box">
+  <div class="splash-logo" style="margin-bottom:4px">MODA<em>STYLE</em></div>
+  <div class="splash-sub" style="margin-bottom:24px">Rapport d'audit</div>
+  <div class="final-score-big" id="f-note" style="font-size:72px">0</div>
+  <div style="color:var(--ink4);font-size:16px;margin-bottom:24px;font-weight:700">/ 20</div>
+  <div class="final-det">
+    <div class="final-row"><span>Cabinet</span><span id="f-names">—</span></div>
+    <div class="final-row"><span>Groupe</span><span id="f-grp">—</span></div>
+    <div class="final-row"><span>Phase 1 — Diagnostic</span><span id="f-p1">—</span></div>
+    <div class="final-row"><span>Phase 2 — Analyse</span><span id="f-p2">—</span></div>
+    <div class="final-row"><span>Phase 3 — Vrai/Faux</span><span id="f-p3">—</span></div>
+    <div class="final-row"><span>Phase 4 — Conformité</span><span id="f-p4">—</span></div>
+    <div class="final-row"><span>Phase 5 — Synthèse</span><span id="f-p5">—</span></div>
+    <div class="final-row"><span>Score brut</span><span id="f-sc">—</span></div>
+    <div class="final-row"><span>Erreurs (2e essai raté)</span><span id="f-err" style="color:var(--red)">0</span></div>
+    <div class="final-row"><span>2e essais utilisés</span><span id="f-2nd" style="color:var(--orange)">0</span></div>
+    <div class="final-row"><span>Pénalités</span><span id="f-pen" style="color:var(--red)">0</span></div>
+    <div class="final-row"><span>Durée</span><span id="f-time">—</span></div>
+  </div>
+  <button class="final-btn" onclick="copyReport()" style="margin-bottom:10px">📋 Copier le rapport</button>
+  <button class="final-btn" onclick="sendMail()" style="background:var(--blue);margin-bottom:10px">✉ Ouvrir dans le client email</button>
+  <div id="copy-confirm" style="display:none;color:var(--green);font-size:13px;margin-top:8px;padding:10px;background:rgba(22,163,74,.1);border:1px solid rgba(22,163,74,.3);border-radius:8px"></div>
+</div>
+</div>
+
+<script>
+// ═══════════ DATA — PHASE 1 ═══════════
+const EX=[
+{id:1,title:"Onglet ③ Livraison — Section Garantie",nav:"Rendez-vous sur l'onglet <strong>③ Livraison</strong>, section <strong>Garantie</strong>. Lisez attentivement la clause complète.",
+q0:{label:"Que prévoit exactement cette clause concernant la garantie ?",opts:[{t:"La garantie constructeur de 12 mois se substitue à toute garantie légale ou conventionnelle",v:"A",ok:true},{t:"La garantie légale de 2 ans s'applique en complément d'une garantie commerciale de 12 mois",v:"B"},{t:"La garantie est limitée aux défauts de fabrication constatés dans les 48 heures",v:"C"},{t:"Aucune garantie n'est proposée sur ce produit",v:"D"}]},
+q1:{label:"Quelle est la nature de ce manquement ?",opts:[{t:"Clause liste noire des clauses abusives",v:"A",ok:true},{t:"Clause liste grise des clauses abusives",v:"B"},{t:"Violation du droit de rétractation",v:"C"},{t:"Violation des obligations d'information précontractuelle",v:"D"}]},
+q2:{label:"Quel article de loi fonde ce manquement ?",opts:[{t:"R. 212-1, 6° C. conso. — liste noire : supprimer/réduire le droit à réparation",v:"A",ok:true},{t:"L. 217-4 C. conso. — garantie légale de conformité",v:"B"},{t:"L. 218-2 C. conso. — prescription 2 ans",v:"C"},{t:"L. 221-18 C. conso. — droit de rétractation",v:"D"}]},
+q3:{label:"Pourquoi cette clause est-elle illicite ?",opts:[{t:"Parce que la durée de la garantie commerciale (12 mois) est inférieure à celle de la garantie légale de conformité (2 ans prévus par L. 217-4 C. conso.) et que cet écart de durée constitue en lui-même un préjudice indemnisable pour le consommateur",v:"A"},{t:"Parce que la clause prétend substituer la garantie commerciale à la garantie légale de conformité, alors que celle-ci est d'ordre public (L. 217-4 et s. C. conso.) — une garantie commerciale ne peut que s'ajouter à la garantie légale, jamais la remplacer ni la réduire",v:"B",ok:true},{t:"Parce que l'article L. 217-12 C. conso. interdit au professionnel de proposer une garantie commerciale dont la durée est inférieure à la durée de la garantie légale, ce qui rend la clause automatiquement nulle",v:"C"},{t:"Parce que la garantie légale de conformité impose au professionnel de prouver l'absence de défaut pendant 24 mois (art. L. 217-7 C. conso.), et la clause de 12 mois inverse cette charge de la preuve au détriment du consommateur",v:"D"}]}},
+{id:2,title:"Onglet ① Fiche produit — Encadré en bas de page",nav:"Rendez-vous sur l'onglet <strong>① Fiche produit</strong>. En bas de la page, lisez l'encadré <strong>orange</strong> (pas le rouge).",
+q0:{label:"Quel motif ModaStyle invoque-t-il pour exclure le droit de retour ?",opts:[{t:"Les règles d'hygiène, car le produit est susceptible d'être porté à même la peau",v:"A",ok:true},{t:"Le caractère personnalisé du produit commandé sur mesure",v:"B"},{t:"Le prix promotionnel du produit qui exclut tout retour",v:"C"},{t:"L'ouverture de l'emballage scellé après livraison",v:"D"}]},
+q1:{label:"Quelle est la nature de ce manquement ?",opts:[{t:"Clause liste noire des clauses abusives",v:"A",ok:true},{t:"Violation du RGPD",v:"B"},{t:"Clause liste grise des clauses abusives",v:"C"},{t:"Non-respect de l'obligation de médiation",v:"D"}]},
+q2:{label:"Quel article fonde ce manquement ?",opts:[{t:"L. 221-28, 5° C. conso. — exceptions au droit de rétractation (biens descellés)",v:"A"},{t:"R. 212-1, 6° C. conso. — liste noire : supprimer/réduire un droit légal",v:"B",ok:true},{t:"L. 221-18 C. conso. — droit de rétractation de 14 jours",v:"C"},{t:"L. 217-4 C. conso. — garantie légale",v:"D"}]},
+q3:{label:"Pourquoi cette clause est-elle illicite ?",opts:[{t:"Parce que l'article L. 221-28 C. conso. prévoit que toutes les exceptions au droit de rétractation doivent être expressément acceptées par le consommateur avant la commande, ce que ModaStyle n'a pas fait",v:"A"},{t:"Parce que l'exception hygiène de L. 221-28, 5° C. conso. vise exclusivement les biens descellés ne pouvant être renvoyés pour raisons d'hygiène (sous-vêtements, cosmétiques descellés) — une veste technique n'est pas un bien descellé au sens de ce texte, et le professionnel invoque abusivement cette exception pour supprimer le droit de rétractation",v:"B",ok:true},{t:"Parce que l'article R. 212-2, 4° C. conso. présume abusive toute clause qui limite les moyens de preuve à la disposition du consommateur, et l'exclusion du retour empêche le consommateur de constater un éventuel défaut après essayage",v:"C"},{t:"Parce que l'article L. 221-18 C. conso. dispose que le délai de rétractation est porté à 12 mois lorsque le professionnel n'a pas informé le consommateur de son droit de rétractation, et ModaStyle ne mentionne ce droit nulle part sur la fiche produit",v:"D"}]}},
+{id:3,title:"Onglet ② Commande — Bloc données personnelles",nav:"Rendez-vous sur l'onglet <strong>② Commande</strong>, bloc <strong>« Préférences & données personnelles »</strong>. Examinez l'état des cases à cocher et la dernière ligne du bloc.",
+q0:{label:"Quel mécanisme de recueil du consentement est utilisé ?",opts:[{t:"Des cases pré-cochées pour la newsletter et le partage de données, et un opt-out inversé pour les communications de tiers",v:"A",ok:true},{t:"Des cases toutes décochées que le client doit cocher activement",v:"B"},{t:"Un bouton unique « J'accepte tout » en bas du formulaire",v:"C"},{t:"Aucun mécanisme — le consentement est implicite par la validation de la commande",v:"D"}]},
+q1:{label:"Quelle est la nature de ce manquement ?",opts:[{t:"Violation du RGPD relative aux conditions du consentement",v:"A",ok:true},{t:"Clause liste noire des clauses abusives",v:"B"},{t:"Violation du droit de rétractation",v:"C"},{t:"Non-respect de l'obligation d'information précontractuelle",v:"D"}]},
+q2:{label:"Quel article fonde ce manquement ?",opts:[{t:"RGPD art. 7 — conditions du consentement (acte positif clair)",v:"A",ok:true},{t:"RGPD art. 6 — base légale du traitement",v:"B"},{t:"RGPD art. 13-14 — obligations d'information",v:"C"},{t:"L. 221-5 C. conso. — information précontractuelle",v:"D"}]},
+q3:{label:"Pourquoi cette pratique est-elle illicite ?",opts:[{t:"Parce que l'article 6, §1, a) du RGPD impose que le traitement fondé sur le consentement soit licite uniquement si la finalité est la gestion du contrat — la prospection commerciale ne relève pas de cette base légale et nécessite une autorisation distincte de la CNIL",v:"A"},{t:"Parce que l'article 7 du RGPD exige un consentement donné par un acte positif clair — les cases pré-cochées ne constituent pas un acte positif, et le mécanisme d'opt-out inversé (« si non cochée, vous acceptez ») contredit le caractère libre, spécifique et univoque du consentement requis",v:"B",ok:true},{t:"Parce que l'article 13 du RGPD impose que le responsable de traitement informe la personne concernée des catégories de destinataires avant toute collecte — ModaStyle mentionne « partenaires commerciaux » sans les identifier précisément, ce qui constitue un défaut d'information sanctionnable",v:"C"},{t:"Parce que l'article 83 du RGPD prévoit que le montant des amendes administratives peut atteindre 4 % du chiffre d'affaires annuel mondial — le simple fait d'encourir cette sanction rend le traitement illicite et oblige le professionnel à recueillir un consentement renforcé par signature électronique",v:"D"}]}},
+{id:4,title:"Onglet ③ Livraison — Sections Retours et Remboursements",nav:"Rendez-vous sur l'onglet <strong>③ Livraison</strong>. Lisez les sections <strong>Retours & échanges</strong> et <strong>Remboursements</strong>. Notez les montants et délais exacts.",
+q0:{label:"Quels sont le délai de remboursement et les frais mentionnés ?",opts:[{t:"Remboursement sous 30 à 45 jours, avec déduction de 9,90 € de frais de traitement",v:"A",ok:true},{t:"Remboursement sous 14 jours, sans frais",v:"B"},{t:"Remboursement sous 30 jours, frais de retour à la charge du client uniquement",v:"C"},{t:"Remboursement immédiat par avoir, sans déduction",v:"D"}]},
+q1:{label:"Quelle est la nature de ce manquement ?",opts:[{t:"Violation des règles du remboursement post-rétractation",v:"A",ok:true},{t:"Clause liste grise des clauses abusives",v:"B"},{t:"Violation du RGPD",v:"C"},{t:"Violation de la garantie légale",v:"D"}]},
+q2:{label:"Quel article fonde ce manquement ?",opts:[{t:"L. 221-24 C. conso. — remboursement intégral sous 14 jours",v:"A",ok:true},{t:"L. 221-18 C. conso. — droit de rétractation",v:"B"},{t:"R. 212-1, 6° C. conso. — liste noire",v:"C"},{t:"L. 217-4 C. conso. — garantie légale",v:"D"}]},
+q3:{label:"Pourquoi cette pratique est-elle illicite ?",opts:[{t:"Parce que l'article L. 221-23 C. conso. prévoit que les frais de retour sont toujours à la charge du professionnel en cas de rétractation, et les 9,90 € de frais de traitement constituent des frais de retour déguisés qui violent cette disposition",v:"A"},{t:"Parce que l'article L. 221-24 C. conso. impose le remboursement de la totalité des sommes versées dans un délai maximal de 14 jours suivant la rétractation — un délai de 30 à 45 jours viole ce délai impératif, et la déduction de frais de « traitement » viole l'obligation de remboursement intégral",v:"B",ok:true},{t:"Parce que l'article L. 221-24 C. conso. prévoit qu'en cas de retard de remboursement au-delà de 7 jours, les sommes dues sont majorées de plein droit d'intérêts au taux légal, et le délai de 30-45 jours expose ModaStyle à des pénalités financières automatiques",v:"C"},{t:"Parce que l'article R. 212-1, 6° C. conso. qualifie de clause noire toute stipulation qui supprime ou réduit le droit à réparation du consommateur — les frais de traitement réduisent le montant remboursé et constituent donc une clause de la liste noire réputée non écrite",v:"D"}]}},
+{id:5,title:"Onglet ⑤ Informations légales — Page complète",nav:"Rendez-vous sur l'onglet <strong>⑤ Informations légales</strong>. Lisez <strong>l'intégralité</strong> de la page. Le manquement porte sur ce qui <strong>n'y figure pas</strong>.",
+q0:{label:"Parmi les éléments suivants, lequel est ABSENT de cette page ?",opts:[{t:"Les coordonnées du médiateur de la consommation",v:"A",ok:true},{t:"Le nom du directeur de publication",v:"B"},{t:"Les coordonnées de l'hébergeur du site",v:"C"},{t:"L'adresse email du délégué à la protection des données",v:"D"}]},
+q1:{label:"Quelle est la nature de ce manquement ?",opts:[{t:"Non-respect de l'obligation d'information sur la médiation",v:"A",ok:true},{t:"Clause liste noire",v:"B"},{t:"Violation du RGPD",v:"C"},{t:"Violation de la garantie légale",v:"D"}]},
+q2:{label:"Quel article fonde ce manquement ?",opts:[{t:"L. 612-1 C. conso. — obligation de communiquer les coordonnées du médiateur",v:"A",ok:true},{t:"L. 221-5, 12° C. conso. — info précontractuelle médiation",v:"B"},{t:"R. 212-2, 10° C. conso. — clause liste grise compétence",v:"C"},{t:"Art. 1216 C. civ. — cession de contrat",v:"D"}]},
+q3:{label:"Pourquoi ce manquement est-il illicite ?",opts:[{t:"Parce que l'article L. 612-1 C. conso. impose à tout professionnel de garantir au consommateur le recours effectif à un dispositif de médiation et de communiquer les coordonnées du médiateur compétent — cette information obligatoire est totalement absente du site ModaStyle",v:"A",ok:true},{t:"Parce que l'article L. 612-1 C. conso. prévoit que l'absence de médiateur entraîne automatiquement la nullité de toutes les CGV du professionnel, rendant l'ensemble des conditions contractuelles inopposables au consommateur",v:"B"},{t:"Parce que l'article R. 612-1 C. conso. impose que le médiateur soit obligatoirement un agent public nommé par la DGCCRF, et l'absence de cette nomination empêche le consommateur de faire valoir ses droits auprès du tribunal compétent",v:"C"},{t:"Parce que la directive européenne 2013/11/UE relative au règlement extrajudiciaire des litiges interdit aux professionnels ne disposant pas d'un médiateur de vendre des produits à distance, ce qui rend l'activité même de ModaStyle illégale",v:"D"}]}},
+{id:6,title:"Onglet ① Fiche produit — Affichage du prix",nav:"Rendez-vous sur l'onglet <strong>① Fiche produit</strong>. Observez attentivement la zone de prix : l'ancien prix, le nouveau prix et le pourcentage affiché.",
+tool:{tag:"OUTIL JURIDIQUE",text:"<strong>Directive Omnibus (art. L. 112-1-1 C. conso.) :</strong> Depuis le 28 mai 2022, en cas d'annonce de réduction de prix, le prix antérieur affiché doit correspondre au prix le plus bas pratiqué au cours des 30 derniers jours précédant la réduction."},
+q0:{label:"Quelle information relative au prix est affichée sur la fiche produit ?",opts:[{t:"Un prix barré de 279 € et un prix réduit de 167,40 € (−40 %), sans mention du prix le plus bas des 30 derniers jours",v:"A",ok:true},{t:"Un prix unique de 167,40 € sans référence à un ancien prix",v:"B"},{t:"Un prix de 279 € avec mention « prix le plus bas des 30 derniers jours : 250 € »",v:"C"},{t:"Un prix barré de 279 € avec mention « ancien prix conseillé par le fabricant »",v:"D"}]},
+q1:{label:"Quelle est la nature de ce manquement ?",opts:[{t:"Non-respect des règles d'affichage des réductions de prix",v:"A",ok:true},{t:"Clause liste noire",v:"B"},{t:"Pratique commerciale trompeuse",v:"C"},{t:"Violation de la garantie légale",v:"D"}]},
+q2:{label:"Quel article fonde ce manquement ?",opts:[{t:"L. 112-1-1 C. conso. — prix le plus bas des 30 derniers jours",v:"A",ok:true},{t:"L. 121-2 C. conso. — pratiques commerciales trompeuses",v:"B"},{t:"R. 212-1 C. conso. — clauses abusives liste noire",v:"C"},{t:"L. 221-5 C. conso. — information précontractuelle",v:"D"}]},
+q3:{label:"Pourquoi cet affichage est-il non conforme ?",opts:[{t:"Le prix barré (279 €) ne correspond pas nécessairement au prix le plus bas des 30 derniers jours — sans cette référence obligatoire, le consommateur ne peut vérifier la réalité de la réduction annoncée",v:"A",ok:true},{t:"Les promotions dont le taux de réduction dépasse 30 % sont interdites en dehors des périodes légales de soldes, conformément à l'article L. 310-3 C. com.",v:"B"},{t:"L'article L. 112-1 C. conso. impose l'affichage simultané du prix HT et du prix TTC pour toute vente en ligne, ce que ModaStyle ne fait pas",v:"C"},{t:"Le prix initial de 279 € dépasse le seuil maximal autorisé par l'article L. 410-2 C. com. pour les vêtements techniques, ce qui rend la promotion fictive",v:"D"}]}},
+{id:7,title:"Onglet ④ CGV — Article 5",nav:"Rendez-vous sur l'onglet <strong>④ CGV</strong>, <strong>article 5 — Garanties</strong>. Lisez la première phrase sur le choix en cas de défaut.",
+q0:{label:"Que prévoit la clause en cas de défaut du produit ?",opts:[{t:"ModaStyle se réserve le droit exclusif de choisir entre réparation et remplacement",v:"A",ok:true},{t:"Le consommateur choisit librement entre réparation, remplacement ou remboursement",v:"B"},{t:"Seul le remplacement est proposé, jamais la réparation",v:"C"},{t:"ModaStyle propose un avoir sur une future commande",v:"D"}]},
+q1:{label:"Quelle est la nature de ce manquement ?",opts:[{t:"Violation de la garantie légale de conformité",v:"A",ok:true},{t:"Clause liste grise",v:"B"},{t:"Violation du droit de rétractation",v:"C"},{t:"Non-respect de la médiation",v:"D"}]},
+q2:{label:"Quel article fonde ce manquement ?",opts:[{t:"L. 217-9 C. conso. — choix réparation/remplacement appartient au consommateur",v:"A",ok:true},{t:"L. 217-4 C. conso. — garantie légale (principe général)",v:"B"},{t:"R. 212-1 C. conso. — clause liste noire",v:"C"},{t:"R. 212-2 C. conso. — clause liste grise",v:"D"}]},
+q3:{label:"Pourquoi cette clause est-elle illicite ?",opts:[{t:"Parce que l'article L. 217-9 C. conso. dispose que le professionnel est tenu de procéder au remplacement systématique du bien défectueux, la réparation n'étant admise qu'à titre subsidiaire et avec l'accord express du consommateur par écrit",v:"A"},{t:"Parce que l'article L. 217-9 C. conso. confère au consommateur le choix entre la réparation et le remplacement du bien — le professionnel ne peut refuser le choix du consommateur que si celui-ci entraîne un coût manifestement disproportionné. La clause inverse ce droit en l'attribuant exclusivement au professionnel",v:"B",ok:true},{t:"Parce que l'article R. 212-2, 1° C. conso. présume abusive toute clause ayant pour objet de réserver au professionnel le droit de modifier les caractéristiques du bien — or le choix entre réparation et remplacement constitue une modification des caractéristiques de la prestation due",v:"C"},{t:"Parce que l'article L. 217-12 C. conso. prévoit qu'en cas de défaut de conformité, le consommateur peut exiger la résolution du contrat sans passer par l'étape de la réparation ou du remplacement — la clause est illicite car elle impose un passage obligatoire par l'une de ces deux options",v:"D"}]}},
+{id:8,title:"Onglet ④ CGV — Article 8, paragraphe 2",nav:"Rendez-vous sur l'onglet <strong>④ CGV</strong>, <strong>article 8 — Litiges</strong>. Lisez le paragraphe sur la compétence juridictionnelle.",
+q0:{label:"Quel tribunal est désigné par la clause ?",opts:[{t:"Le Tribunal de Commerce de Lyon est désigné comme exclusivement compétent, y compris pour les litiges avec les consommateurs",v:"A",ok:true},{t:"Le Tribunal judiciaire du domicile du consommateur",v:"B"},{t:"Un tribunal arbitral pour tous les litiges",v:"C"},{t:"Aucun tribunal, seule la médiation est prévue",v:"D"}]},
+q1:{label:"Quelle est la nature de ce manquement ?",opts:[{t:"Clause liste grise des clauses abusives",v:"A",ok:true},{t:"Clause liste noire",v:"B"},{t:"Violation du RGPD",v:"C"},{t:"Violation de la garantie légale",v:"D"}]},
+q2:{label:"Quel article fonde ce manquement ?",opts:[{t:"R. 212-2, 10° C. conso. — liste grise : entraver l'exercice d'actions en justice",v:"A",ok:true},{t:"R. 212-1, 12° C. conso. — liste noire : imposer un tribunal arbitral",v:"B"},{t:"L. 612-1 C. conso. — obligation de médiation",v:"C"},{t:"Art. 1218 C. civ. — force majeure",v:"D"}]},
+q3:{label:"Pourquoi cette clause est-elle abusive ?",opts:[{t:"Parce que l'article L. 141-5 du Code de l'organisation judiciaire réserve la compétence exclusive des tribunaux de commerce aux litiges entre commerçants — un consommateur ne peut jamais être attrait devant une juridiction commerciale, ce qui rend la clause nulle",v:"A"},{t:"Parce que la clause désigne un tribunal qui n'est pas celui du domicile du consommateur, créant un obstacle géographique et financier à l'exercice de son action en justice — le consommateur a toujours la faculté de saisir la juridiction du lieu de son domicile (art. R. 631-3 C. conso.)",v:"B",ok:true},{t:"Parce que l'article R. 212-1, 12° C. conso. qualifie de clause noire toute stipulation imposant au consommateur la compétence d'une juridiction déterminée — la clause est donc réputée non écrite de plein droit sans que le juge ait besoin de l'apprécier",v:"C"},{t:"Parce que l'article 48 du Code de procédure civile interdit les clauses attributives de compétence territoriale dans tous les contrats, qu'ils soient conclus entre professionnels ou avec des consommateurs, sauf accord écrit postérieur à la naissance du litige",v:"D"}]}
+}
+];
+
+// ═══════════ DATA — PHASE 2 ═══════════
+const CAS=[
+{id:1,title:"Rupture de stock et force majeure",source:"CGV art. 4",clause:"« La rupture de stock constitue un cas de force majeure déchargeant ModaStyle de toute obligation d'exécution ou d'indemnisation au-delà du remboursement du prix. »",
+art:{label:"Quel article encadre cette situation ?",opts:[{t:"Art. 1218 C. civ. — force majeure",v:"A",ok:true},{t:"R. 212-1 C. conso. — liste noire",v:"B"},{t:"R. 212-2 C. conso. — liste grise",v:"C"},{t:"L. 221-18 C. conso. — rétractation",v:"D"},{t:"RGPD art. 7 — consentement",v:"E"}],pts:3},
+conds:{label:"Conditions cumulatives de l'art. 1218 C. civ. ?",opts:[{t:"Extériorité de l'événement",ok:true},{t:"Imprévisibilité au moment du contrat",ok:true},{t:"Irrésistibilité dans ses effets",ok:true},{t:"Intentionnalité du débiteur",ok:false},{t:"Antériorité au contrat",ok:false}],pts:5},
+micros:[
+{cond:"Extériorité",q:"La condition d'extériorité est-elle remplie ?",opts:[{t:"Oui — causée par les fournisseurs, extérieur à ModaStyle",v:"A"},{t:"Non — la gestion des stocks relève de l'organisation interne du professionnel",v:"B",ok:true},{t:"Oui — tout événement commercial est extérieur au contrat",v:"C"},{t:"Non — la loi interdit de qualifier un événement commercial d'extérieur",v:"D"}],pts:3},
+{cond:"Imprévisibilité",q:"La condition d'imprévisibilité est-elle remplie ?",opts:[{t:"Non — un professionnel de la vente en ligne doit anticiper les variations de stock",v:"A",ok:true},{t:"Oui — ModaStyle ne pouvait pas prévoir quels produits seraient commandés",v:"B"},{t:"Oui — une rupture de stock est toujours imprévisible",v:"C"},{t:"Non — parce que le contrat a été conclu après la mise en vente",v:"D"}],pts:3},
+{cond:"Irrésistibilité",q:"La condition d'irrésistibilité est-elle remplie ?",opts:[{t:"Non — ModaStyle peut réapprovisionner, proposer un équivalent ou rembourser",v:"A",ok:true},{t:"Oui — une fois le stock épuisé, impossible de livrer",v:"B"},{t:"Oui — on ne peut pas créer de marchandise",v:"C"},{t:"Non — parce que la rupture est toujours temporaire",v:"D"}],pts:2}],
+csq:{label:"Conséquence juridique ?",opts:[{t:"Clause réputée non écrite : la rupture de stock ne remplit pas les conditions de la force majeure",v:"A",ok:true},{t:"Contrat annulé rétroactivement",v:"B"},{t:"Amende DGCCRF",v:"C"},{t:"Le consommateur perd son droit à réparation",v:"D"},{t:"Clause présumée abusive (liste grise)",v:"E"}],pts:4}},
+{id:2,title:"Commande « ferme et définitive » — rétractation",source:"CGV art. 3",clause:"« La commande est réputée ferme et définitive dès validation du paiement. Aucune annulation ne pourra être acceptée. »",
+art:{label:"Quel article encadre cette situation ?",opts:[{t:"L. 221-18 C. conso. — droit de rétractation 14 jours",v:"A",ok:true},{t:"R. 212-1 C. conso. — liste noire",v:"B"},{t:"Art. 1218 C. civ. — force majeure",v:"C"},{t:"L. 217-4 C. conso. — garantie légale",v:"D"},{t:"RGPD art. 7 — consentement",v:"E"}],pts:3},
+conds:{label:"Conditions posées par L. 221-18 ?",opts:[{t:"Contrat conclu à distance (vente en ligne)",ok:true},{t:"Délai de 14 jours calendaires à compter de la réception",ok:true},{t:"Droit d'ordre public — ne peut être supprimé ni réduit",ok:true},{t:"Obligation de motiver la rétractation",ok:false},{t:"Délai réduit à 7 jours pour les biens personnalisés",ok:false}],pts:5},
+micros:[
+{cond:"Vente à distance",q:"La condition de VAD est-elle remplie ?",opts:[{t:"Oui — ModaStyle est un site e-commerce, commande en ligne sans présence physique",v:"A",ok:true},{t:"Non — le paiement en ligne n'est pas une VAD",v:"B"},{t:"Oui — mais uniquement pour la France métropolitaine",v:"C"},{t:"Non — le consommateur a vu le produit sur le site",v:"D"}],pts:2},
+{cond:"Ordre public",q:"Le caractère d'ordre public est-il violé ?",opts:[{t:"Oui — le droit de rétractation est d'ordre public, aucune clause ne peut le supprimer — « ferme et définitive » supprime ce droit",v:"A",ok:true},{t:"Non — le professionnel peut aménager le droit si un avoir est offert",v:"B"},{t:"Non — l'ordre public ne s'applique pas aux promotions",v:"C"},{t:"Oui — mais seulement si le produit n'a pas été utilisé",v:"D"}],pts:3},
+{cond:"Délai de 14 jours",q:"Le délai légal est-il respecté ?",opts:[{t:"Non — la clause supprime intégralement le délai en déclarant la commande « ferme dès paiement », alors que le délai court à compter de la réception du bien",v:"A",ok:true},{t:"Oui — le site mentionne « retours 30 jours » dans la bannière",v:"B"},{t:"Non — le délai devrait être de 30 jours en ligne",v:"C"},{t:"Oui — le droit de rétractation ne commence qu'après ouverture",v:"D"}],pts:3}],
+csq:{label:"Conséquence juridique ?",opts:[{t:"Clause réputée non écrite (liste noire R. 212-1) : le consommateur conserve ses 14 jours",v:"A",ok:true},{t:"Contrat annulé intégralement",v:"B"},{t:"ModaStyle doit prolonger à 30 jours",v:"C"},{t:"Clause présumée abusive (liste grise)",v:"D"},{t:"Amende CNIL 4 % du CA",v:"E"}],pts:4}},
+{id:3,title:"Forclusion contractuelle à 6 mois",source:"CGV art. 8 §3",clause:"« Toute action sera forclose à l'expiration d'un délai de 6 mois à compter du fait générateur, se substituant à tout délai légal. »",
+art:{label:"Quel article encadre cette situation ?",opts:[{t:"L. 218-2 C. conso. — prescription 2 ans",v:"A",ok:true},{t:"R. 212-1 C. conso. — liste noire",v:"B"},{t:"L. 217-4 C. conso. — garantie légale",v:"C"},{t:"Art. 1218 C. civ. — force majeure",v:"D"},{t:"L. 221-18 C. conso. — rétractation",v:"E"}],pts:3},
+conds:{label:"Caractéristiques de la prescription L. 218-2 ?",opts:[{t:"Prescription de 2 ans à compter de la délivrance",ok:true},{t:"Délai d'ordre public de protection",ok:true},{t:"Réduction contractuelle interdite",ok:true},{t:"Délai susceptible d'être allongé par le professionnel",ok:false},{t:"Applicable uniquement aux biens neufs",ok:false}],pts:5},
+micros:[
+{cond:"Prescription 2 ans",q:"Le délai contractuel de 6 mois est-il conforme ?",opts:[{t:"Non — la clause réduit à 6 mois alors que la loi accorde 2 ans",v:"A",ok:true},{t:"Oui — le professionnel peut fixer un délai de forclusion",v:"B"},{t:"Non — le délai minimum est de 12 mois",v:"C"},{t:"Oui — forclusion et prescription sont deux mécanismes distincts",v:"D"}],pts:4},
+{cond:"Ordre public",q:"La clause peut-elle écarter le délai légal ?",opts:[{t:"Non — le délai de L. 218-2 est d'ordre public de protection, impératif en faveur du consommateur",v:"A",ok:true},{t:"Oui — l'ordre public ne concerne que les clauses abusives",v:"B"},{t:"Non — sauf accord express du consommateur",v:"C"},{t:"Oui — les CGV prévalent sur le droit supplétif",v:"D"}],pts:4}],
+csq:{label:"Conséquence juridique ?",opts:[{t:"Clause réputée non écrite : le consommateur conserve le délai de 2 ans",v:"A",ok:true},{t:"Clause présumée abusive (liste grise)",v:"B"},{t:"Contrat résolu de plein droit",v:"C"},{t:"Amende CNIL 4 % du CA",v:"D"},{t:"Le consommateur doit d'abord saisir le médiateur",v:"E"}],pts:4}},
+{id:4,title:"Cession du contrat sans accord du client",source:"CGV art. 7",clause:"« ModaStyle peut céder ce contrat à tout tiers, sans accord préalable du client. »",
+art:{label:"Quel article encadre cette situation ?",opts:[{t:"Art. 1216 C. civ. — cession de contrat",v:"A",ok:true},{t:"RGPD art. 13-14 — information traitement données",v:"B"},{t:"R. 212-2 C. conso. — liste grise",v:"C"},{t:"L. 218-2 C. conso. — prescription",v:"D"},{t:"L. 221-18 C. conso. — rétractation",v:"E"}],pts:3},
+conds:{label:"Conditions de la cession (art. 1216 C. civ.) ?",opts:[{t:"Accord du cédé (le client) obligatoire",ok:true},{t:"Cession inopposable sans consentement",ok:true},{t:"Simple information préalable suffit",ok:false},{t:"Homologation judiciaire requise",ok:false},{t:"Le cédant reste garant solidaire par défaut",ok:false}],pts:5},
+micros:[
+{cond:"Accord du cédé",q:"Le consentement du client est-il respecté ?",opts:[{t:"Non — l'art. 1216 exige le consentement du cédé, la clause l'écarte expressément",v:"A",ok:true},{t:"Oui — l'information « dans un délai raisonnable » vaut consentement tacite",v:"B"},{t:"Non — mais uniquement si le cessionnaire est un concurrent",v:"C"},{t:"Oui — le consentement n'est requis que pour les contrats intuitu personae",v:"D"}],pts:4},
+{cond:"Inopposabilité",q:"Conséquence de l'absence de consentement ?",opts:[{t:"La cession est inopposable au client — il peut exiger l'exécution par ModaStyle",v:"A",ok:true},{t:"La cession est nulle et le contrat résolu",v:"B"},{t:"Le client peut demander des DI mais doit accepter la cession",v:"C"},{t:"La DGCCRF peut infliger une amende",v:"D"}],pts:4}],
+csq:{label:"Conséquence juridique ?",opts:[{t:"Cession inopposable au client faute de consentement",v:"A",ok:true},{t:"Clause réputée non écrite (liste noire)",v:"B"},{t:"Contrat annulé intégralement",v:"C"},{t:"Amende CNIL 4 % du CA",v:"D"},{t:"Clause présumée abusive (liste grise)",v:"E"}],pts:4}}
+];
+
+// ═══════════ DATA — PHASE 3 AFFIRMATIONS ═══════════
+const AFF=[
+{id:1,text:"Le délai de rétractation de 14 jours court à compter de la validation de la commande en ligne.",vf:false,just:[{t:"FAUX — le délai court à compter de la réception du bien par le consommateur (L. 221-18 C. conso.), pas de la validation de la commande",ok:true},{t:"FAUX — le délai court à compter de l'expédition du bien par le professionnel",ok:false},{t:"VRAI — la validation de la commande marque la conclusion du contrat à distance",ok:false}]},
+{id:2,text:"Le consommateur qui exerce son droit de rétractation n'a pas à motiver sa décision.",vf:true,just:[{t:"VRAI — l'article L. 221-18 C. conso. prévoit expressément que le consommateur peut se rétracter sans avoir à justifier de motifs",ok:true},{t:"VRAI — mais uniquement si le produit n'a pas été ouvert ou utilisé",ok:false},{t:"FAUX — le consommateur doit indiquer le motif de sa rétractation dans le formulaire prévu à cet effet",ok:false}]},
+{id:3,text:"Un vêtement porté à même la peau est automatiquement exclu du droit de rétractation au titre de l'exception hygiène.",vf:false,just:[{t:"FAUX — l'exception de L. 221-28, 5° vise les biens descellés ne pouvant être renvoyés pour raisons d'hygiène (cosmétiques, sous-vêtements descellés) — un simple vêtement porté à même la peau n'entre pas dans cette catégorie",ok:true},{t:"FAUX — l'exception hygiène ne s'applique qu'aux produits alimentaires et cosmétiques, jamais aux textiles",ok:false},{t:"VRAI — tout article en contact direct avec la peau relève de l'exception hygiène prévue par le Code de la consommation",ok:false}]},
+{id:4,text:"En cas de rétractation, le professionnel dispose de 30 jours pour rembourser le consommateur.",vf:false,just:[{t:"FAUX — l'article L. 221-24 C. conso. impose un remboursement dans un délai maximal de 14 jours suivant la rétractation, pas 30 jours",ok:true},{t:"FAUX — le remboursement doit intervenir sous 7 jours ouvrés conformément au RGPD",ok:false},{t:"VRAI — le professionnel dispose de 30 jours, réduits à 14 si le consommateur renvoie le bien avant",ok:false}]},
+{id:5,text:"Le professionnel peut déduire des frais de traitement du montant remboursé au consommateur qui se rétracte.",vf:false,just:[{t:"FAUX — L. 221-24 impose le remboursement de la totalité des sommes versées — aucune déduction de frais de « traitement » n'est admise, seuls les frais de retour peuvent être à la charge du consommateur (L. 221-23)",ok:true},{t:"FAUX — le professionnel doit rembourser le double du prix en cas de rétractation, sans aucune déduction",ok:false},{t:"VRAI — les frais de traitement sont admis s'ils sont mentionnés dans les CGV et acceptés par le consommateur",ok:false}]},
+{id:6,text:"La garantie légale de conformité peut être remplacée par une garantie commerciale si celle-ci est plus avantageuse pour le consommateur.",vf:false,just:[{t:"FAUX — la garantie légale de conformité est d'ordre public (L. 217-4 C. conso.) et ne peut jamais être remplacée — une garantie commerciale ne peut que s'y ajouter, même si elle est plus avantageuse",ok:true},{t:"FAUX — la garantie commerciale doit toujours être identique à la garantie légale, ni plus ni moins avantageuse",ok:false},{t:"VRAI — le professionnel peut proposer une garantie commerciale en remplacement si elle offre une protection supérieure au consommateur",ok:false}]},
+{id:7,text:"En cas de défaut de conformité, c'est le professionnel qui décide si le bien sera réparé ou remplacé.",vf:false,just:[{t:"FAUX — l'article L. 217-9 C. conso. confère au consommateur le choix entre la réparation et le remplacement — le professionnel ne peut refuser que si le choix entraîne un coût manifestement disproportionné",ok:true},{t:"FAUX — ni le professionnel ni le consommateur ne choisissent : la loi impose toujours le remplacement en priorité",ok:false},{t:"VRAI — le professionnel est le mieux placé pour évaluer la faisabilité technique de la réparation ou du remplacement",ok:false}]},
+{id:8,text:"La présomption d'antériorité du défaut de conformité couvre les 24 premiers mois suivant la délivrance pour les biens neufs.",vf:true,just:[{t:"VRAI — depuis la réforme de 2022, la présomption d'antériorité couvre l'intégralité du délai de garantie (24 mois) pour les biens neufs, le consommateur n'a pas à prouver que le défaut existait à la délivrance",ok:true},{t:"VRAI — mais uniquement pour les biens d'une valeur supérieure à 500 €",ok:false},{t:"FAUX — la présomption d'antériorité ne couvre que les 12 premiers mois, au-delà le consommateur doit prouver l'antériorité du défaut",ok:false}]},
+{id:9,text:"Une clause qui supprime le droit de rétractation du consommateur est présumée abusive et peut être renversée par le professionnel s'il apporte la preuve contraire.",vf:false,just:[{t:"FAUX — une clause supprimant le droit de rétractation figure sur la liste noire (R. 212-1 C. conso.) : elle est réputée non écrite de plein droit, sans possibilité pour le professionnel d'apporter la preuve contraire. C'est la liste grise qui est présumée abusive avec renversement possible",ok:true},{t:"FAUX — la suppression du droit de rétractation n'est pas une clause abusive mais une infraction pénale sanctionnée par la DGCCRF",ok:false},{t:"VRAI — toutes les clauses abusives sont présumées et le professionnel peut toujours démontrer leur caractère non abusif devant le juge",ok:false}]},
+{id:10,text:"Une clause attributive de compétence au tribunal de commerce est réputée non écrite car elle figure sur la liste noire.",vf:false,just:[{t:"FAUX — une clause attributive de compétence figure sur la liste grise (R. 212-2, 10° C. conso.), pas la liste noire — elle est présumée abusive, ce qui signifie que le professionnel pourrait théoriquement prouver qu'elle n'est pas abusive",ok:true},{t:"FAUX — les clauses attributives de compétence ne relèvent ni de la liste noire ni de la liste grise, elles sont régies par le Code de procédure civile uniquement",ok:false},{t:"VRAI — toute clause imposant un tribunal déterminé au consommateur figure sur la liste noire et est réputée non écrite",ok:false}]},
+{id:11,text:"Pour qu'un événement soit qualifié de force majeure, il suffit qu'il soit imprévisible et irrésistible.",vf:false,just:[{t:"FAUX — l'article 1218 C. civ. exige trois conditions cumulatives : extériorité, imprévisibilité ET irrésistibilité — l'absence d'une seule condition empêche la qualification de force majeure",ok:true},{t:"FAUX — la force majeure exige uniquement l'imprévisibilité, les autres conditions ne sont que des indices facultatifs",ok:false},{t:"VRAI — l'article 1218 C. civ. ne mentionne que l'imprévisibilité et l'irrésistibilité comme conditions de la force majeure",ok:false}]},
+{id:12,text:"Le professionnel peut céder le contrat à un tiers à condition d'en informer le consommateur dans un délai raisonnable.",vf:false,just:[{t:"FAUX — l'article 1216 C. civ. exige le consentement du cédé (le consommateur), pas une simple information — sans ce consentement, la cession lui est inopposable",ok:true},{t:"FAUX — la cession de contrat est interdite en droit de la consommation, même avec l'accord du consommateur",ok:false},{t:"VRAI — l'information dans un délai raisonnable est suffisante car le contrat de vente n'est pas un contrat intuitu personae",ok:false}]}
+];
+
+// ═══════════ DATA — PHASE 4 COMPARATIFS ═══════════
+const COMP=[
+{id:1,title:"Clause de force majeure (CGV art. 4)",orig:"« La rupture de stock constitue un cas de force majeure déchargeant ModaStyle de toute obligation d'exécution ou d'indemnisation au-delà du remboursement du prix. »",
+vers:[
+{lbl:"Version A",txt:"En cas d'événement présentant les caractères de la force majeure au sens de l'article 1218 du Code civil — c'est-à-dire un événement extérieur, imprévisible et irrésistible — ModaStyle en informera le client dans les meilleurs délais. Si l'empêchement est définitif, le contrat sera résolu de plein droit et ModaStyle remboursera intégralement le client sous 14 jours. La rupture de stock ne constitue pas un cas de force majeure.",ok:true},
+{lbl:"Version B",txt:"En cas de force majeure, notamment en cas de rupture de stock, d'incendie, de grève ou de catastrophe naturelle, ModaStyle sera déchargée de ses obligations. Remboursement dans un délai raisonnable.",ok:false,errs:[{t:"La rupture de stock reste dans les exemples de force majeure et les 3 conditions de l'art. 1218 ne sont pas mentionnées",ok:true},{t:"Le délai de remboursement n'est pas précisé en jours",ok:false},{t:"La clause oublie le médiateur",ok:false}]},
+{lbl:"Version C",txt:"En cas d'événement imprévisible et irrésistible, ModaStyle pourra suspendre l'exécution. Le client sera remboursé sous 14 jours si l'exécution devient impossible. La rupture de stock ne constitue pas un cas de force majeure.",ok:false,errs:[{t:"Il manque la condition d'extériorité — les 3 conditions de l'art. 1218 sont cumulatives",ok:true},{t:"Le remboursement devrait être sous 7 jours",ok:false},{t:"La clause devrait imposer un produit de remplacement",ok:false}]},
+{lbl:"Version D",txt:"En cas d'événement extérieur, imprévisible et irrésistible au sens de l'article 1218 du Code civil, ModaStyle pourra suspendre ou résoudre le contrat. Le client conserve son droit de résolution. Remboursement sous 45 jours.",ok:false,errs:[{t:"Le délai de remboursement de 45 jours viole le délai légal de 14 jours (L. 221-24)",ok:true},{t:"La clause n'exclut pas la rupture de stock",ok:false},{t:"La mention de l'article 1218 est incorrecte",ok:false}]}]},
+{id:2,title:"Clause de rétractation (CGV art. 3)",orig:"« La commande est réputée ferme et définitive dès validation du paiement. Aucune annulation ne pourra être acceptée. »",
+vers:[
+{lbl:"Version A",txt:"Conformément à l'article L. 221-18 du Code de la consommation, le client dispose d'un délai de 14 jours calendaires à compter de la réception du bien pour exercer son droit de rétractation, sans avoir à motiver sa décision. ModaStyle remboursera la totalité des sommes versées, y compris les frais de livraison, dans un délai de 14 jours.",ok:true},
+{lbl:"Version B",txt:"Le client dispose de 14 jours calendaires à compter de la validation de la commande pour exercer son droit de rétractation. Remboursement intégral sous 14 jours.",ok:false,errs:[{t:"Le délai court à compter de la réception du bien, pas de la validation de la commande",ok:true},{t:"La clause oublie de mentionner l'article L. 221-18",ok:false},{t:"Le remboursement devrait inclure les frais de retour",ok:false}]},
+{lbl:"Version C",txt:"Conformément à l'article L. 221-18, le client dispose d'un délai de 7 jours ouvrés à compter de la réception pour exercer son droit de rétractation. Remboursement sous 14 jours.",ok:false,errs:[{t:"Le délai légal est de 14 jours calendaires, pas 7 jours ouvrés",ok:true},{t:"Le remboursement devrait être sous 7 jours",ok:false},{t:"La clause devrait lister les exceptions au droit de rétractation",ok:false}]},
+{lbl:"Version D",txt:"Le client peut exercer son droit de rétractation dans un délai de 14 jours à compter de la réception, sous réserve que le produit soit retourné dans son emballage d'origine non ouvert. Remboursement sous 14 jours, déduction des frais de retour.",ok:false,errs:[{t:"L'exigence d'emballage « non ouvert » restreint abusivement le droit — le consommateur peut ouvrir et essayer le bien",ok:true},{t:"Les frais de retour ne devraient pas être déduits",ok:false},{t:"Le délai devrait être de 30 jours pour les vêtements",ok:false}]}]},
+{id:3,title:"Clause de garantie (Livraison — section Garantie)",orig:"« La Veste Urban Pro X7 bénéficie d'une garantie constructeur ModaStyle de 12 mois. Cette garantie se substitue à toute autre garantie légale ou conventionnelle. »",
+vers:[
+{lbl:"Version A",txt:"La Veste Urban Pro X7 bénéficie de la garantie légale de conformité (articles L. 217-4 et suivants du Code de la consommation) d'une durée de 2 ans à compter de la délivrance. En complément, ModaStyle offre une garantie commerciale de 12 mois couvrant les défauts de fabrication. En cas de défaut de conformité, le consommateur choisit entre la réparation et le remplacement du bien.",ok:true},
+{lbl:"Version B",txt:"La Veste Urban Pro X7 bénéficie de la garantie légale de conformité de 2 ans. En complément, ModaStyle offre une garantie commerciale de 12 mois. ModaStyle se réserve le droit de choisir entre réparation et remplacement selon les contraintes techniques.",ok:false,errs:[{t:"C'est le consommateur qui choisit entre réparation et remplacement (L. 217-9), pas le professionnel",ok:true},{t:"La garantie commerciale devrait être de 2 ans également",ok:false},{t:"La clause ne mentionne pas le médiateur",ok:false}]},
+{lbl:"Version C",txt:"ModaStyle garantit la Veste Urban Pro X7 pendant 24 mois. Cette garantie couvre tous les défauts de fabrication et de conformité. Le consommateur peut choisir entre réparation et remplacement. Le remboursement interviendra sous 30 jours.",ok:false,errs:[{t:"La clause fusionne garantie légale et commerciale en une seule sans distinguer les deux régimes ni citer les articles applicables",ok:true},{t:"Le délai de remboursement est trop long",ok:false},{t:"La clause ne précise pas la date de départ de la garantie",ok:false}]},
+{lbl:"Version D",txt:"Conformément aux articles L. 217-4 et suivants, la Veste Urban Pro X7 bénéficie de la garantie légale de conformité de 2 ans. Tout défaut apparu dans les 12 premiers mois est présumé exister au moment de la délivrance. Au-delà, le consommateur devra prouver l'antériorité du défaut.",ok:false,errs:[{t:"Depuis la réforme de 2022, la présomption d'antériorité couvre les 24 mois (et non 12) pour les biens neufs",ok:true},{t:"La clause ne mentionne pas la garantie commerciale",ok:false},{t:"Le consommateur ne devrait jamais avoir la charge de la preuve",ok:false}]}]}
+];
+
+// ═══════════ DATA — PHASE 5 DRAG & DROP ═══════════
+const DD={
+clauses:[
+{id:"c1",text:"Garantie 12 mois « se substituant à toute garantie légale »",fond:"f1",csq:"s1"},
+{id:"c2",text:"Commande « ferme et définitive dès validation du paiement »",fond:"f2",csq:"s2"},
+{id:"c3",text:"Compétence exclusive du TC de Lyon",fond:"f3",csq:"s3"},
+{id:"c4",text:"Cession du contrat sans accord du client",fond:"f4",csq:"s4"},
+{id:"c5",text:"Rupture de stock = force majeure",fond:"f5",csq:"s5"},
+{id:"c6",text:"Remboursement sous 30-45 jours",fond:"f6",csq:"s6"}
+],
+fondements:[
+{id:"f1",text:"R. 212-1, 6° C. conso. — liste noire"},
+{id:"f2",text:"L. 221-18 C. conso. — rétractation 14 jours"},
+{id:"f3",text:"R. 212-2, 10° C. conso. — liste grise"},
+{id:"f4",text:"Art. 1216 C. civ. — cession de contrat"},
+{id:"f5",text:"Art. 1218 C. civ. — force majeure"},
+{id:"f6",text:"L. 221-24 C. conso. — remboursement 14 jours"},
+{id:"fx1",text:"RGPD art. 6 — base légale du traitement",intrus:true},
+{id:"fx2",text:"L. 121-2 C. conso. — pratiques trompeuses",intrus:true}
+],
+consequences:[
+{id:"s1",text:"Clause réputée non écrite (liste noire)"},
+{id:"s2",text:"Clause réputée non écrite — consommateur conserve 14 jours"},
+{id:"s3",text:"Clause présumée abusive (liste grise)"},
+{id:"s4",text:"Cession inopposable au consommateur"},
+{id:"s5",text:"Clause non écrite — conditions FM non réunies"},
+{id:"s6",text:"Remboursement intégral sous 14 jours exigible"},
+{id:"sx1",text:"Amende CNIL 4 % du CA mondial",intrus:true},
+{id:"sx2",text:"Contrat annulé rétroactivement",intrus:true}
+]
+};
+
+// ═══════════ ENGINE ═══════════
+let score=0,p1S=0,p2S=0,p3S=0,p4S=0,p5S=0,errors=0,secondTries=0,tmr=75*60,t0=null,names='',group='',intv=null;
+const A={};
+const log=[];
+
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]}return b}
+
+// Splash
+document.querySelectorAll('#n1,#n2,#grp').forEach(e=>e.addEventListener('input',()=>{
+  document.getElementById('go').disabled=!(document.getElementById('n1').value.trim()&&document.getElementById('n2').value.trim()&&document.getElementById('grp').value.trim());
+}));
+
+function launch(){
+  names=document.getElementById('n1').value.trim()+' & '+document.getElementById('n2').value.trim();
+  group=document.getElementById('grp').value.trim();
+  document.getElementById('tbn').textContent=names;
+  document.getElementById('splash').classList.add('hidden');
+  document.getElementById('topbar').style.display='flex';
+  t0=new Date();
+  intv=setInterval(()=>{tmr--;if(tmr<=0){clearInterval(intv);tmr=0;showFinal()}updTmr()},1000);
+  updTmr();buildP1();buildP2();buildP3();buildP4();initP4Count();buildP5();
+}
+
+function updTmr(){const m=Math.floor(tmr/60),s=tmr%60;const el=document.getElementById('tmr');el.textContent=m+':'+(s<10?'0':'')+s;el.classList.toggle('urgent',tmr<=300)}
+function updSc(){const el=document.getElementById('sc');el.textContent=Math.round(score*10)/10;el.classList.add('anim-pop');setTimeout(()=>el.classList.remove('anim-pop'),300)}
+function updErr(){document.getElementById('tb-err').textContent=errors+' err.';}
+function tab(id,btn){document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.tb-tab').forEach(t=>t.classList.remove('active'));document.getElementById('tab-'+id).classList.add('active');if(btn)btn.classList.add('active')}
+
+// ═══════════ PHASE 1 BUILD ═══════════
+function buildP1(){
+  const c=document.getElementById('p1box');
+  shuffle(EX).forEach((ex,idx)=>{
+    const d=document.createElement('div');d.className='q-card';d.id='ex'+ex.id;
+    const q0o=shuffle(ex.q0.opts),q1o=shuffle(ex.q1.opts),q2o=shuffle(ex.q2.opts),q3o=shuffle(ex.q3.opts);
+    let toolH=ex.tool?`<div class="q-tool"><div class="q-tool-tag">${ex.tool.tag}</div>${ex.tool.text}</div>`:'';
+    d.innerHTML=`<div class="q-head"><div class="q-num">${idx+1}</div><div><div class="q-title">${ex.title}</div></div><div class="q-status" id="exS${ex.id}"></div></div>
+    <div class="q-body"><div class="q-navigate">📂 ${ex.nav}</div>${toolH}
+    ${[0,1,2].map(q=>`<div class="step${q>0?' locked':''}" id="ex${ex.id}s${q}"><div class="step-label"><span class="step-badge">${q+1}</span> ${ex['q'+q].label}</div><select class="sel" id="ex${ex.id}v${q}"${q>0?' disabled':''} onchange="chkEx(${ex.id},${q})"><option value="">— Sélectionnez —</option>${shuffle(ex['q'+q].opts).map(o=>`<option value="${o.v}">${o.t}</option>`).join('')}</select><div class="fb" id="ex${ex.id}f${q}"></div></div>`).join('')}
+    <div class="step locked" id="ex${ex.id}s3"><div class="step-label"><span class="step-badge">4</span> ${ex.q3.label}</div><div class="rg" id="ex${ex.id}rg">${q3o.map(o=>`<div class="ro" data-v="${o.v}" onclick="selR(this,'ex${ex.id}')"><div class="rd"></div><div class="rt">${o.t}</div></div>`).join('')}</div><button class="vbtn" id="ex${ex.id}vb" disabled onclick="chkEx(${ex.id},3)">Valider</button><div class="fb" id="ex${ex.id}f3"></div></div></div>`;
+    c.appendChild(d);
+    for(let i=0;i<=3;i++)A['ex'+ex.id+'_'+i]=0;
+  });
+}
+function selR(el,pre){document.getElementById(pre+'rg').querySelectorAll('.ro:not(.r-dead)').forEach(r=>r.classList.remove('sel'));el.classList.add('sel');document.getElementById(pre+'vb').disabled=false}
+
+function chkEx(id,q){
+  const ex=EX.find(e=>e.id===id),k='ex'+id+'_'+q;A[k]++;
+  let val,cor;
+  if(q<=2){val=document.getElementById('ex'+id+'v'+q).value;cor=ex['q'+q].opts.find(o=>o.ok).v}
+  else{const s=document.querySelector('#ex'+id+'rg .ro.sel');if(!s)return;val=s.dataset.v;cor=ex.q3.opts.find(o=>o.ok).v}
+  if(!val)return;
+  const fb=document.getElementById('ex'+id+'f'+q);
+  if(val===cor){
+    const e=A[k]===1?1:0.5;if(A[k]>1)secondTries++;score+=e;p1S+=e;updSc();
+    if(q<=2){const s=document.getElementById('ex'+id+'v'+q);s.classList.add(A[k]===1?'ok':'half');s.disabled=true}
+    else{const s=document.querySelector('#ex'+id+'rg .ro.sel');s.classList.remove('sel');s.classList.add('r-ok');document.querySelectorAll('#ex'+id+'rg .ro:not(.r-ok)').forEach(r=>r.classList.add('r-off'));document.getElementById('ex'+id+'vb').style.display='none'}
+    fb.innerHTML=`✓ +${e} pt`+(A[k]>1?' (2e essai)':'');fb.className='fb show fb-ok';
+    if(q<3){document.getElementById('ex'+id+'s'+(q+1)).classList.remove('locked');if(q+1<=2)document.getElementById('ex'+id+'v'+(q+1)).disabled=false}
+  } else {
+    errors++;updErr();log.push({p:1,id:id,q:q,a:A[k],w:val});
+    document.getElementById('ex'+id+'s'+q).classList.add('anim-shake');setTimeout(()=>document.getElementById('ex'+id+'s'+q).classList.remove('anim-shake'),500);
+    if(A[k]===1){fb.innerHTML='⚠ Incorrecte — 2e essai à 50 %. <span class="pen">×0.5</span>';fb.className='fb show fb-warn';
+      if(q<=2){const s=document.getElementById('ex'+id+'v'+q);const wo=s.querySelector(`option[value="${val}"]`);if(wo)wo.disabled=true;s.value=''}
+      else{document.querySelector('#ex'+id+'rg .ro.sel').classList.remove('sel');document.querySelector('#ex'+id+'rg .ro[data-v="'+val+'"]').classList.add('r-dead');document.getElementById('ex'+id+'vb').disabled=true}
+    } else {
+      score-=0.5;p1S-=0.5;updSc();fb.innerHTML='✗ <strong>−0.5 pt</strong>';fb.className='fb show fb-fail';
+      if(q<=2){document.getElementById('ex'+id+'v'+q).classList.add('fail');document.getElementById('ex'+id+'v'+q).disabled=true}
+      else{document.querySelectorAll('#ex'+id+'rg .ro').forEach(r=>r.classList.add('r-off'));document.getElementById('ex'+id+'vb').style.display='none'}
+      if(q<3){document.getElementById('ex'+id+'s'+(q+1)).classList.remove('locked');if(q+1<=2)document.getElementById('ex'+id+'v'+(q+1)).disabled=false}
+    }
+  }
+  // Check P1 complete
+  let done=true;EX.forEach(x=>{for(let i=0;i<=3;i++)if(A['ex'+x.id+'_'+i]===0)done=false});
+  if(done)document.getElementById('btn-p2').style.display='block';
+}
+
+// ═══════════ PHASE 2 BUILD ═══════════
+function buildP2(){
+  const c=document.getElementById('p2box');
+  shuffle(CAS).forEach((cas,idx)=>{
+    const d=document.createElement('div');d.className='q-card';d.id='cas'+cas.id;
+    let miH='';cas.micros.forEach((m,mi)=>{
+      miH+=`<div class="step locked" id="cas${cas.id}m${mi}"><div class="step-label"><span class="step-badge">${m.cond}</span> ${m.q}</div><div class="rg" id="cas${cas.id}m${mi}rg">${shuffle(m.opts).map(o=>`<div class="ro" data-v="${o.v}" onclick="selR(this,'cas${cas.id}m${mi}')"><div class="rd"></div><div class="rt">${o.t}</div></div>`).join('')}</div><button class="vbtn" id="cas${cas.id}m${mi}vb" disabled onclick="chkMi(${cas.id},${mi})">Valider</button><div class="fb" id="cas${cas.id}m${mi}f"></div></div>`;
+    });
+    d.innerHTML=`<div class="q-head"><div class="q-num blue">${idx+1}</div><div><div class="q-title">${cas.title}</div><div class="q-source">${cas.source}</div></div></div>
+    <div class="q-clause"><strong>${cas.source}</strong> : ${cas.clause}</div>
+    <div class="q-body">
+    <div class="eb" id="cas${cas.id}e1"><div class="eb-head"><span class="eb-num">1</span><span class="eb-lbl">${cas.art.label}</span></div><div class="eb-body"><select class="sel" id="cas${cas.id}art" onchange="chkArt(${cas.id})"><option value="">— Sélectionnez —</option>${shuffle(cas.art.opts).map(o=>`<option value="${o.v}">${o.t}</option>`).join('')}</select><div class="fb" id="cas${cas.id}artf"></div></div></div>
+    <div class="eb locked" id="cas${cas.id}e2"><div class="eb-head"><span class="eb-num">2</span><span class="eb-lbl">${cas.conds.label}</span></div><div class="eb-body"><div class="cg" id="cas${cas.id}cg">${shuffle(cas.conds.opts).map(o=>`<div class="co" data-ok="${o.ok}" onclick="this.classList.toggle('ck')"><div class="cb"></div><span>${o.t}</span></div>`).join('')}</div><button class="vbtn" id="cas${cas.id}cvb" onclick="chkCo(${cas.id})" style="margin-top:10px">Valider</button><div class="fb" id="cas${cas.id}cf"></div></div></div>
+    <div class="eb locked" id="cas${cas.id}e3"><div class="eb-head"><span class="eb-num">3</span><span class="eb-lbl">Application aux faits</span></div><div class="eb-body">${miH}</div></div>
+    <div class="eb locked" id="cas${cas.id}e4"><div class="eb-head"><span class="eb-num">4</span><span class="eb-lbl">${cas.csq.label}</span></div><div class="eb-body"><select class="sel" id="cas${cas.id}csq" disabled onchange="chkCsq(${cas.id})"><option value="">— Sélectionnez —</option>${shuffle(cas.csq.opts).map(o=>`<option value="${o.v}">${o.t}</option>`).join('')}</select><div class="fb" id="cas${cas.id}csqf"></div></div></div>
+    </div>`;
+    c.appendChild(d);
+    A['cas'+cas.id+'art']=0;A['cas'+cas.id+'cond']=0;A['cas'+cas.id+'csq']=0;
+    cas.micros.forEach((m,mi)=>A['cas'+cas.id+'m'+mi]=0);
+  });
+}
+
+function chkSel(k,sel,fb,pts,phase,unlock){
+  A[k]++;const cor=sel.dataset?sel.dataset.cor:sel.getAttribute('data-cor');
+  // Generic select checker used by Phase 2
+}
+
+function chkArt(id){const cas=CAS.find(c=>c.id===id),k='cas'+id+'art';A[k]++;const sel=document.getElementById('cas'+id+'art'),fb=document.getElementById('cas'+id+'artf'),cor=cas.art.opts.find(o=>o.ok).v;
+  if(sel.value===cor){const e=A[k]===1?cas.art.pts:Math.ceil(cas.art.pts*0.5);if(A[k]>1)secondTries++;score+=e;p2S+=e;updSc();sel.classList.add(A[k]===1?'ok':'half');sel.disabled=true;fb.innerHTML=`✓ +${e} pts`;fb.className='fb show fb-ok';document.getElementById('cas'+id+'e2').classList.remove('locked')}
+  else{errors++;updErr();log.push({p:2,id:id,s:'art',a:A[k],w:sel.value});document.getElementById('cas'+id+'e1').classList.add('anim-shake');setTimeout(()=>document.getElementById('cas'+id+'e1').classList.remove('anim-shake'),500);
+    if(A[k]===1){fb.innerHTML='⚠ Incorrecte — 2e essai. <span class="pen">×0.5</span>';fb.className='fb show fb-warn';const wo=sel.querySelector(`option[value="${sel.value}"]`);if(wo)wo.disabled=true;sel.value=''}
+    else{score-=0.5;p2S-=0.5;updSc();sel.classList.add('fail');sel.disabled=true;fb.innerHTML='✗ <strong>−0.5 pt</strong>';fb.className='fb show fb-fail';document.getElementById('cas'+id+'e2').classList.remove('locked')}
+  }chkP2()}
+
+function chkCo(id){const cas=CAS.find(c=>c.id===id),k='cas'+id+'cond';A[k]++;const els=document.querySelectorAll('#cas'+id+'cg .co'),fb=document.getElementById('cas'+id+'cf');
+  let ok=0,wrong=0,missed=0;const tot=cas.conds.opts.filter(o=>o.ok).length;
+  els.forEach(el=>{const isOk=el.dataset.ok==='true',isCk=el.classList.contains('ck');if(isOk&&isCk)ok++;if(!isOk&&isCk)wrong++;if(isOk&&!isCk)missed++});
+  if(wrong===0&&missed===0){const e=A[k]===1?cas.conds.pts:Math.ceil(cas.conds.pts*0.5);if(A[k]>1)secondTries++;score+=e;p2S+=e;updSc();els.forEach(el=>{el.classList.add('c-off');if(el.classList.contains('ck'))el.classList.add('c-ok')});document.getElementById('cas'+id+'cvb').style.display='none';fb.innerHTML=`✓ +${e} pts`;fb.className='fb show fb-ok';document.getElementById('cas'+id+'e3').classList.remove('locked');cas.micros.forEach((m,mi)=>document.getElementById('cas'+id+'m'+mi).classList.remove('locked'))}
+  else{errors++;updErr();log.push({p:2,id:id,s:'cond',a:A[k],ok:ok,w:wrong});document.getElementById('cas'+id+'e2').classList.add('anim-shake');setTimeout(()=>document.getElementById('cas'+id+'e2').classList.remove('anim-shake'),500);
+    if(A[k]===1){fb.innerHTML=`⚠ ${ok}/${tot} correctes — 2e essai. <span class="pen">×0.5</span>`;fb.className='fb show fb-warn'}
+    else{els.forEach(el=>{el.classList.add('c-off');if(el.dataset.ok==='true')el.classList.add('c-ok');if(el.dataset.ok!=='true'&&el.classList.contains('ck'))el.classList.add('c-fail')});
+      const partial=Math.max(0,Math.ceil((ok/tot)*cas.conds.pts*0.5)-wrong);score+=partial-0.5;p2S+=partial-0.5;updSc();document.getElementById('cas'+id+'cvb').style.display='none';fb.innerHTML=`${ok}/${tot} — ${partial>0?'+'+partial:'0'} pts, <strong>−0.5</strong>`;fb.className='fb show fb-fail';document.getElementById('cas'+id+'e3').classList.remove('locked');cas.micros.forEach((m,mi)=>document.getElementById('cas'+id+'m'+mi).classList.remove('locked'))}
+  }chkP2()}
+
+function chkMi(cid,mi){const cas=CAS.find(c=>c.id===cid),micro=cas.micros[mi],k='cas'+cid+'m'+mi;A[k]++;const s=document.querySelector('#cas'+cid+'m'+mi+'rg .ro.sel');if(!s)return;const val=s.dataset.v,cor=micro.opts.find(o=>o.ok).v,fb=document.getElementById('cas'+cid+'m'+mi+'f');
+  if(val===cor){const e=A[k]===1?micro.pts:Math.ceil(micro.pts*0.5);if(A[k]>1)secondTries++;score+=e;p2S+=e;updSc();s.classList.remove('sel');s.classList.add('r-ok');document.querySelectorAll('#cas'+cid+'m'+mi+'rg .ro:not(.r-ok)').forEach(r=>r.classList.add('r-off'));document.getElementById('cas'+cid+'m'+mi+'vb').style.display='none';fb.innerHTML=`✓ +${e} pts`;fb.className='fb show fb-ok'}
+  else{errors++;updErr();log.push({p:2,id:cid,s:'m'+mi,a:A[k],w:val});document.getElementById('cas'+cid+'m'+mi).classList.add('anim-shake');setTimeout(()=>document.getElementById('cas'+cid+'m'+mi).classList.remove('anim-shake'),500);
+    if(A[k]===1){fb.innerHTML='⚠ Incorrecte — 2e essai. <span class="pen">×0.5</span>';fb.className='fb show fb-warn';s.classList.remove('sel');s.classList.add('r-dead');document.getElementById('cas'+cid+'m'+mi+'vb').disabled=true}
+    else{score-=0.5;p2S-=0.5;updSc();s.classList.remove('sel');s.classList.add('r-dead');document.querySelectorAll('#cas'+cid+'m'+mi+'rg .ro').forEach(r=>r.classList.add('r-off'));document.getElementById('cas'+cid+'m'+mi+'vb').style.display='none';fb.innerHTML='✗ <strong>−0.5</strong>';fb.className='fb show fb-fail'}
+  }
+  let allDone=true;cas.micros.forEach((m,i)=>{if(A['cas'+cid+'m'+i]===0)allDone=false});
+  if(allDone){document.getElementById('cas'+cid+'e4').classList.remove('locked');document.getElementById('cas'+cid+'csq').disabled=false}
+  chkP2()}
+
+function chkCsq(id){const cas=CAS.find(c=>c.id===id),k='cas'+id+'csq';A[k]++;const sel=document.getElementById('cas'+id+'csq'),fb=document.getElementById('cas'+id+'csqf'),cor=cas.csq.opts.find(o=>o.ok).v;
+  if(sel.value===cor){const e=A[k]===1?cas.csq.pts:Math.ceil(cas.csq.pts*0.5);if(A[k]>1)secondTries++;score+=e;p2S+=e;updSc();sel.classList.add(A[k]===1?'ok':'half');sel.disabled=true;fb.innerHTML=`✓ +${e} pts`;fb.className='fb show fb-ok'}
+  else{errors++;updErr();log.push({p:2,id:id,s:'csq',a:A[k],w:sel.value});document.getElementById('cas'+id+'e4').classList.add('anim-shake');setTimeout(()=>document.getElementById('cas'+id+'e4').classList.remove('anim-shake'),500);
+    if(A[k]===1){fb.innerHTML='⚠ Incorrecte — 2e essai. <span class="pen">×0.5</span>';fb.className='fb show fb-warn';const wo=sel.querySelector(`option[value="${sel.value}"]`);if(wo)wo.disabled=true;sel.value=''}
+    else{score-=0.5;p2S-=0.5;updSc();sel.classList.add('fail');sel.disabled=true;fb.innerHTML='✗ <strong>−0.5</strong>';fb.className='fb show fb-fail'}
+  }chkP2()}
+
+function chkP2(){let done=true;CAS.forEach(cas=>{if(A['cas'+cas.id+'art']===0||A['cas'+cas.id+'cond']===0||A['cas'+cas.id+'csq']===0){done=false;return}cas.micros.forEach((m,mi)=>{if(A['cas'+cas.id+'m'+mi]===0)done=false})});if(done)document.getElementById('btn-p3').style.display='block'}
+
+// ═══════════ PHASE 3 AFFIRMATIONS ═══════════
+function buildP3(){
+  const c=document.getElementById('p3box');
+  shuffle(AFF).forEach((aff,idx)=>{
+    const d=document.createElement('div');d.className='aff';d.id='aff'+aff.id;
+    const jo=shuffle(aff.just);
+    d.innerHTML=`<div class="aff-head"><span class="aff-num">${idx+1}</span></div>
+    <div class="aff-body">
+      <div class="aff-text">« ${aff.text} »</div>
+      <div class="aff-vf"><button class="aff-btn" onclick="chkVF(${aff.id},true,this)">VRAI</button><button class="aff-btn" onclick="chkVF(${aff.id},false,this)">FAUX</button></div>
+      <div class="fb" id="aff${aff.id}vf-fb"></div>
+      <div class="aff-just" id="aff${aff.id}just">
+        <div class="step-label" style="margin-bottom:8px"><span class="step-badge">?</span> Justification</div>
+        <div class="rg" id="aff${aff.id}jrg">${jo.map(j=>`<div class="ro" data-ok="${j.ok}" onclick="selR(this,'aff${aff.id}j')"><div class="rd"></div><div class="rt">${j.t}</div></div>`).join('')}</div>
+        <button class="vbtn" id="aff${aff.id}jvb" disabled onclick="chkJust(${aff.id})">Valider</button>
+        <div class="fb" id="aff${aff.id}j-fb"></div>
+      </div>
+    </div>`;
+    c.appendChild(d);
+    A['aff'+aff.id+'vf']=0;A['aff'+aff.id+'j']=0;
+  });
+}
+
+function chkVF(id,ans,btn){
+  const aff=AFF.find(a=>a.id===id),k='aff'+id+'vf';A[k]++;
+  const fb=document.getElementById('aff'+id+'vf-fb');
+  const correct=(ans===aff.vf);
+  btn.parentElement.querySelectorAll('.aff-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  if(correct){
+    const e=A[k]===1?1:0.5;if(A[k]>1)secondTries++;score+=e;p3S+=e;updSc();
+    btn.classList.remove('sel');btn.classList.add('a-ok');btn.parentElement.querySelectorAll('.aff-btn:not(.a-ok)').forEach(b=>b.classList.add('a-off'));
+    fb.innerHTML=`✓ +${e} pt`;fb.className='fb show fb-ok';
+    document.getElementById('aff'+id+'just').classList.add('show');
+  } else {
+    errors++;updErr();log.push({p:3,id:id,s:'vf',a:A[k]});
+    btn.parentElement.classList.add('anim-shake');setTimeout(()=>btn.parentElement.classList.remove('anim-shake'),500);
+    if(A[k]===1){fb.innerHTML='⚠ Incorrecte — 2e essai. <span class="pen">×0.5</span>';fb.className='fb show fb-warn';btn.classList.remove('sel');btn.classList.add('a-fail');btn.classList.add('a-off')}
+    else{score-=0.5;p3S-=0.5;updSc();btn.classList.remove('sel');btn.classList.add('a-fail');btn.parentElement.querySelectorAll('.aff-btn').forEach(b=>b.classList.add('a-off'));fb.innerHTML='✗ <strong>−0.5 pt</strong>';fb.className='fb show fb-fail';document.getElementById('aff'+id+'just').classList.add('show')}
+  }
+  chkP3()}
+
+function chkJust(id){
+  const k='aff'+id+'j';A[k]++;const s=document.querySelector('#aff'+id+'jrg .ro.sel');if(!s)return;
+  const ok=s.dataset.ok==='true',fb=document.getElementById('aff'+id+'j-fb');
+  if(ok){const e=A[k]===1?1:0.5;if(A[k]>1)secondTries++;score+=e;p3S+=e;updSc();s.classList.remove('sel');s.classList.add('r-ok');document.querySelectorAll('#aff'+id+'jrg .ro:not(.r-ok)').forEach(r=>r.classList.add('r-off'));document.getElementById('aff'+id+'jvb').style.display='none';fb.innerHTML=`✓ +${e} pt`;fb.className='fb show fb-ok'}
+  else{errors++;updErr();log.push({p:3,id:id,s:'j',a:A[k]});document.getElementById('aff'+id+'just').classList.add('anim-shake');setTimeout(()=>document.getElementById('aff'+id+'just').classList.remove('anim-shake'),500);
+    if(A[k]===1){fb.innerHTML='⚠ 2e essai. <span class="pen">×0.5</span>';fb.className='fb show fb-warn';s.classList.remove('sel');s.classList.add('r-dead');document.getElementById('aff'+id+'jvb').disabled=true}
+    else{score-=0.5;p3S-=0.5;updSc();s.classList.remove('sel');s.classList.add('r-dead');document.querySelectorAll('#aff'+id+'jrg .ro').forEach(r=>r.classList.add('r-off'));document.getElementById('aff'+id+'jvb').style.display='none';fb.innerHTML='✗ <strong>−0.5</strong>';fb.className='fb show fb-fail'}
+  }chkP3()}
+
+function chkP3(){let done=true;AFF.forEach(a=>{if(A['aff'+a.id+'vf']===0||A['aff'+a.id+'j']===0)done=false});if(done)document.getElementById('btn-p4').style.display='block'}
+
+// ═══════════ PHASE 4 COMPARATIFS ═══════════
+function buildP4(){
+  const c=document.getElementById('p4box');
+  COMP.forEach((comp,idx)=>{
+    const d=document.createElement('div');d.className='q-card';d.id='comp'+comp.id;
+    const sv=shuffle(comp.vers.map((v,i)=>({...v,oi:i})));
+    let vH='';sv.forEach((v,vi)=>{
+      let errH='';
+      if(!v.ok&&v.errs){errH=`<div class="err-zone" id="comp${comp.id}err${vi}"><div style="font-size:11px;font-weight:700;color:var(--ink2);margin-bottom:6px">Quelle est l'erreur ?</div><div class="rg" id="comp${comp.id}err${vi}rg">${shuffle(v.errs).map(e=>`<div class="ro" data-ok="${e.ok}" onclick="selR(this,'comp${comp.id}err${vi}')"><div class="rd"></div><div class="rt">${e.t}</div></div>`).join('')}</div><button class="vbtn" id="comp${comp.id}err${vi}vb" disabled onclick="chkErr(${comp.id},${vi})">Valider</button><div class="fb" id="comp${comp.id}err${vi}f"></div></div>`}
+      vH+=`<div class="cv" id="comp${comp.id}v${vi}" data-ok="${v.ok}" data-vi="${vi}" onclick="selCV(${comp.id},${vi})"><div class="cv-lbl">${v.lbl}</div><div class="cv-txt">${v.txt}</div>${errH}</div>`;
+    });
+    d.innerHTML=`<div class="q-head"><div class="q-num green">${idx+1}</div><div><div class="q-title">${comp.title}</div></div></div>
+    <div class="q-body"><div class="q-clause"><strong>Clause actuelle :</strong><br>${comp.orig}</div>
+    <div style="font-size:12px;color:var(--ink3);margin-bottom:10px;font-weight:600">Sélectionnez la version conforme, puis identifiez l'erreur dans chaque version incorrecte.</div>
+    <div id="comp${comp.id}vs">${vH}</div>
+    <button class="vbtn" id="comp${comp.id}cb" disabled onclick="chkCV(${comp.id})">Valider</button>
+    <div class="fb" id="comp${comp.id}cf"></div></div>`;
+    c.appendChild(d);
+    A['comp'+comp.id+'ch']=0;
+    sv.forEach((v,vi)=>{if(!v.ok)A['comp'+comp.id+'err'+vi]=0});
+  });
+}
+function selCV(cid,vi){const vs=document.querySelectorAll('#comp'+cid+'vs .cv');if(vs[0]&&vs[0].classList.contains('cv-off'))return;vs.forEach(v=>v.classList.remove('cv-sel'));document.getElementById('comp'+cid+'v'+vi).classList.add('cv-sel');document.getElementById('comp'+cid+'cb').disabled=false}
+
+function chkCV(cid){const k='comp'+cid+'ch';A[k]++;const sel=document.querySelector('#comp'+cid+'vs .cv.cv-sel');if(!sel)return;const ok=sel.dataset.ok==='true',fb=document.getElementById('comp'+cid+'cf');
+  if(ok){const e=A[k]===1?3:2;if(A[k]>1)secondTries++;score+=e;p4S+=e;updSc();sel.classList.remove('cv-sel');sel.classList.add('cv-ok');document.querySelectorAll('#comp'+cid+'vs .cv:not(.cv-ok)').forEach(v=>{v.classList.add('cv-off');const vi=v.dataset.vi;const ez=document.getElementById('comp'+cid+'err'+vi);if(ez)ez.classList.add('show')});document.getElementById('comp'+cid+'cb').style.display='none';fb.innerHTML=`✓ +${e} pts — identifiez les erreurs.`;fb.className='fb show fb-ok'}
+  else{errors++;updErr();log.push({p:4,id:cid,s:'ch',a:A[k]});document.getElementById('comp'+cid).classList.add('anim-shake');setTimeout(()=>document.getElementById('comp'+cid).classList.remove('anim-shake'),500);
+    if(A[k]===1){fb.innerHTML='⚠ 2e essai. <span class="pen">×0.5</span>';fb.className='fb show fb-warn';sel.classList.remove('cv-sel');sel.classList.add('cv-fail');document.getElementById('comp'+cid+'cb').disabled=true}
+    else{score-=0.5;p4S-=0.5;updSc();sel.classList.remove('cv-sel');sel.classList.add('cv-fail');document.querySelectorAll('#comp'+cid+'vs .cv').forEach(v=>v.classList.add('cv-off'));document.getElementById('comp'+cid+'cb').style.display='none';fb.innerHTML='✗ <strong>−0.5</strong>';fb.className='fb show fb-fail'}
+  }chkP4()}
+
+function chkErr(cid,vi){const k='comp'+cid+'err'+vi;A[k]++;const s=document.querySelector('#comp'+cid+'err'+vi+'rg .ro.sel');if(!s)return;const ok=s.dataset.ok==='true',fb=document.getElementById('comp'+cid+'err'+vi+'f');
+  if(ok){const e=1;score+=e;p4S+=e;updSc();s.classList.remove('sel');s.classList.add('r-ok');document.querySelectorAll('#comp'+cid+'err'+vi+'rg .ro:not(.r-ok)').forEach(r=>r.classList.add('r-off'));document.getElementById('comp'+cid+'err'+vi+'vb').style.display='none';fb.innerHTML=`✓ +${e} pt`;fb.className='fb show fb-ok'}
+  else{errors++;updErr();log.push({p:4,id:cid,s:'err'+vi,a:A[k]});document.getElementById('comp'+cid+'err'+vi).classList.add('anim-shake');setTimeout(()=>document.getElementById('comp'+cid+'err'+vi).classList.remove('anim-shake'),500);
+    if(A[k]===1){fb.innerHTML='⚠ 2e essai. <span class="pen">×0.5</span>';fb.className='fb show fb-warn';s.classList.remove('sel');s.classList.add('r-dead');document.getElementById('comp'+cid+'err'+vi+'vb').disabled=true}
+    else{score-=0.5;p4S-=0.5;updSc();s.classList.remove('sel');s.classList.add('r-dead');document.querySelectorAll('#comp'+cid+'err'+vi+'rg .ro').forEach(r=>r.classList.add('r-off'));document.getElementById('comp'+cid+'err'+vi+'vb').style.display='none';fb.innerHTML='✗ <strong>−0.5</strong>';fb.className='fb show fb-fail'}
+  }chkP4()}
+
+let p4Total=0,p4Done=0;
+function initP4Count(){
+  // Count: 1 choice per comp + number of err keys
+  COMP.forEach(comp=>{
+    p4Total++; // choice
+    Object.keys(A).forEach(k=>{if(k.startsWith('comp'+comp.id+'err'))p4Total++});
+  });
+}
+function chkP4(){
+  // Recount done items
+  p4Done=0;
+  COMP.forEach(comp=>{
+    if(A['comp'+comp.id+'ch']>=2||(A['comp'+comp.id+'ch']>=1&&document.querySelector('#comp'+comp.id+' .cv-ok'))){
+      p4Done++;
+      // If choice failed (no cv-ok), errors are skipped — count them as done
+      if(!document.querySelector('#comp'+comp.id+' .cv-ok')){
+        Object.keys(A).forEach(k=>{if(k.startsWith('comp'+comp.id+'err'))p4Done++});
+      } else {
+        Object.keys(A).forEach(k=>{if(k.startsWith('comp'+comp.id+'err')&&A[k]>0)p4Done++});
+      }
+    }
+  });
+  if(p4Done>=p4Total)document.getElementById('btn-p5').style.display='block';
+}
+
+// ═══════════ PHASE 5 — CLICK TO PLACE ═══════════
+let p5Sel=null; // {id, text, pool, el}
+
+function buildP5(){
+  const c=document.getElementById('p5box');
+  const fonds=shuffle([...DD.fondements]);
+  const csqs=shuffle([...DD.consequences]);
+  
+  let rowsH='';
+  DD.clauses.forEach(cl=>{
+    rowsH+=`<div class="dd-row">
+      <div class="dd-slot" style="font-size:11.5px;color:var(--ink);font-weight:600;border-style:solid;background:var(--bg);cursor:default">${cl.text}</div>
+      <div class="dd-slot" id="slot-f-${cl.id}" data-expect="${cl.fond}" onclick="p5Click(this)">—</div>
+      <div class="dd-slot" id="slot-s-${cl.id}" data-expect="${cl.csq}" onclick="p5Click(this)">—</div>
+    </div>`;
+  });
+  
+  let fondsH=fonds.map(f=>`<div class="dd-item${f.intrus?' dd-intrus':''}" data-id="${f.id}" onclick="p5Pick(this)">${f.text}</div>`).join('');
+  let csqsH=csqs.map(s=>`<div class="dd-item${s.intrus?' dd-intrus':''}" data-id="${s.id}" onclick="p5Pick(this)">${s.text}</div>`).join('');
+  
+  c.innerHTML=`
+  <div style="font-size:12px;color:var(--ink3);margin-bottom:14px;padding:12px 16px;background:var(--blue-bg);border:1px solid var(--blue-border);border-radius:var(--r2);line-height:1.7">
+    <strong>Mode d'emploi :</strong><br>
+    1. Cliquez sur une étiquette dans les pools ci-dessous — elle se surligne en bleu.<br>
+    2. Cliquez sur une case vide « — » du tableau pour y placer l'étiquette.<br>
+    3. Pour <strong>modifier</strong>, cliquez sur une case déjà remplie — l'étiquette retourne dans le pool.<br>
+    4. Quand toutes les cases sont remplies, le bouton « Valider » s'active.
+  </div>
+  <div style="margin-bottom:20px">${rowsH}</div>
+  <div class="dd-grid">
+    <div class="dd-col"><div class="dd-col-title">Fondements disponibles</div><div class="dd-pool" id="pool-f">${fondsH}</div></div>
+    <div class="dd-col"><div class="dd-col-title">Conséquences disponibles</div><div class="dd-pool" id="pool-s">${csqsH}</div></div>
+    <div class="dd-col"><div class="dd-col-title">Validation</div>
+      <button class="vbtn" id="dd-val" onclick="validateDD()" style="width:100%;margin-top:10px;padding:12px" disabled>Valider le tableau</button>
+      <div style="font-size:11px;color:var(--ink4);margin-top:8px;text-align:center" id="dd-count">0 / ${DD.clauses.length*2} cases remplies</div>
+      <div class="fb" id="dd-fb" style="margin-top:8px"></div>
+    </div>
+  </div>`;
+}
+
+function p5Pick(el){
+  if(el.classList.contains('dd-used'))return;
+  // Deselect previous
+  document.querySelectorAll('.dd-item.dd-picked').forEach(i=>i.classList.remove('dd-picked'));
+  el.classList.add('dd-picked');
+  p5Sel={id:el.dataset.id,text:el.textContent,el:el};
+}
+
+function p5Click(slot){
+  // If slot is filled and no item selected → remove item from slot, return to pool
+  if(slot.classList.contains('filled')&&!p5Sel){
+    const droppedId=slot.dataset.dropped;
+    const item=document.querySelector('.dd-item[data-id="'+droppedId+'"]');
+    if(item){item.style.display='';item.classList.remove('dd-used')}
+    slot.textContent='—';
+    slot.classList.remove('filled');
+    delete slot.dataset.dropped;
+    p5UpdateCount();
+    return;
+  }
+  // If slot is filled and item selected → swap: return old, place new
+  if(slot.classList.contains('filled')&&p5Sel){
+    const droppedId=slot.dataset.dropped;
+    const oldItem=document.querySelector('.dd-item[data-id="'+droppedId+'"]');
+    if(oldItem){oldItem.style.display='';oldItem.classList.remove('dd-used')}
+  }
+  // If item selected → place in slot
+  if(p5Sel){
+    slot.textContent=p5Sel.text;
+    slot.dataset.dropped=p5Sel.id;
+    slot.classList.add('filled');
+    p5Sel.el.style.display='none';
+    p5Sel.el.classList.add('dd-used');
+    p5Sel.el.classList.remove('dd-picked');
+    p5Sel=null;
+    p5UpdateCount();
+  }
+}
+
+function p5UpdateCount(){
+  const filled=document.querySelectorAll('.dd-slot.filled').length;
+  const total=DD.clauses.length*2;
+  document.getElementById('dd-count').textContent=filled+' / '+total+' cases remplies';
+  document.getElementById('dd-val').disabled=(filled<total);
+}
+
+function validateDD(){
+  const fb=document.getElementById('dd-fb');
+  let correct=0,total=DD.clauses.length*2;
+  DD.clauses.forEach(cl=>{
+    const fSlot=document.getElementById('slot-f-'+cl.id);
+    const sSlot=document.getElementById('slot-s-'+cl.id);
+    if(fSlot.dataset.dropped===cl.fond){correct++;fSlot.classList.add('slot-ok')}else{fSlot.classList.add('slot-fail')}
+    if(sSlot.dataset.dropped===cl.csq){correct++;sSlot.classList.add('slot-ok')}else{sSlot.classList.add('slot-fail')}
+    fSlot.onclick=null;sSlot.onclick=null;
+  });
+  p5S=correct;score+=correct;updSc();
+  const missed=total-correct;if(missed>0){errors+=missed;updErr()}
+  fb.innerHTML=`${correct}/${total} associations correctes — +${correct} pts`;
+  fb.className='fb show '+(correct===total?'fb-ok':correct>total/2?'fb-warn':'fb-fail');
+  document.getElementById('dd-val').disabled=true;
+  document.querySelectorAll('.dd-item').forEach(i=>{i.onclick=null;i.style.cursor='default'});
+}
+
+// ═══════════ TRANSITIONS ═══════════
+function goP2(){tab('phase2',null);document.querySelector('.tb-tab.phase-tab').textContent='📋 Phase 2'}
+function goP3(){tab('phase3',null);document.querySelector('.tb-tab.phase-tab').textContent='📋 Phase 3'}
+function goP4(){tab('phase4',null);document.querySelector('.tb-tab.phase-tab').textContent='📋 Phase 4'}
+function goP5(){tab('phase5',null);document.querySelector('.tb-tab.phase-tab').textContent='📋 Phase 5'}
+
+// ═══════════ FINAL ═══════════
+function calcNote(){
+  const maxBrut=166;
+  // Score net = score brut - pénalités (erreurs × 0.5 + 2e essais × 0.25)
+  const penalties = errors * 0.5 + secondTries * 0.25;
+  const scoreNet = Math.max(0, score - penalties);
+  let note = Math.round((scoreNet / maxBrut) * 20 * 2) / 2; // arrondi au 0.5
+  return Math.min(20, Math.max(0, note));
+}
+
+function showFinal(){
+  clearInterval(intv);const el=Math.floor((new Date()-t0)/1000),m=Math.floor(el/60),s=el%60;
+  const note=calcNote();
+  const noteEl=document.getElementById('f-note');
+  noteEl.textContent=note.toFixed(1).replace('.0','');
+  noteEl.className='note-big '+(note>=14?'note-ok':note>=10?'note-mid':'note-low');
+  document.getElementById('f-names').textContent=names;
+  document.getElementById('f-grp').textContent=group;
+  document.getElementById('f-p1').textContent=Math.round(p1S*10)/10+'/32';
+  document.getElementById('f-p2').textContent=Math.round(p2S*10)/10+'/80';
+  document.getElementById('f-p3').textContent=Math.round(p3S*10)/10+'/24';
+  document.getElementById('f-p4').textContent=Math.round(p4S*10)/10+'/18';
+  document.getElementById('f-p5').textContent=p5S+'/12';
+  document.getElementById('f-sc').textContent=Math.round(score*10)/10+'/166';
+  document.getElementById('f-err').textContent=errors;
+  document.getElementById('f-2nd').textContent=secondTries;
+  document.getElementById('f-pen').textContent='−'+(errors*0.5+secondTries*0.25).toFixed(1);
+  document.getElementById('f-time').textContent=m+' min '+(s<10?'0':'')+s+' s';
+  document.getElementById('final').classList.add('show');
+}
+
+function getReport(){
+  const el=Math.floor((new Date()-t0)/1000),m=Math.floor(el/60),s=el%60;const note=calcNote();
+  const errLog=log.map(e=>'  P'+e.p+' #'+e.id+' '+e.s+' tentative '+e.a+(e.w?' → '+e.w:'')).join('\n');
+  return 'RAPPORT D\'AUDIT — MODASTYLE\n══════════════════════════\n\n'+
+    'Cabinet : '+names+'\nGroupe : '+group+'\nDate : '+new Date().toLocaleDateString('fr-FR')+'\n\n'+
+    'NOTE FINALE : '+note+' / 20\n\n'+
+    'Score brut : '+Math.round(score*10)/10+' / 146\n'+
+    '  P1 Diagnostic : '+Math.round(p1S*10)/10+'/32\n  P2 Analyse : '+Math.round(p2S*10)/10+'/80\n  P3 Vrai/Faux : '+Math.round(p3S*10)/10+'/24\n  P4 Conformité : '+Math.round(p4S*10)/10+'/18\n  P5 Synthèse : '+p5S+'/12\n\n'+
+    'Erreurs (2e essai raté) : '+errors+' (−0.5 pt chacune)\n'+
+    '2e essais utilisés : '+secondTries+' (−0.25 pt chacun sur la note)\n\n'+
+    'DÉTAIL DES ERREURS :\n'+(errLog||'  Aucune')+'\n\n'+
+    'Durée : '+m+'min '+s+'s\nDébut : '+t0.toLocaleString('fr-FR')+'\nFin : '+new Date().toLocaleString('fr-FR')+'\n\n══════════════════════════\nModaStyle Audit v3';
+}
+function copyReport(){navigator.clipboard.writeText(getReport()).then(()=>{document.getElementById('copy-confirm').style.display='block';document.getElementById('copy-confirm').textContent='✓ Rapport copié — collez-le dans un email.'}).catch(()=>{const ta=document.createElement('textarea');ta.value=getReport();ta.style.cssText='width:100%;height:180px;margin-top:8px;font-family:var(--ffm);font-size:10px;background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:10px';document.getElementById('copy-confirm').after(ta);document.getElementById('copy-confirm').style.display='block';document.getElementById('copy-confirm').textContent='⚠ Sélectionnez et copiez le texte :';ta.select()})}
+function sendMail(){window.location.href='mailto:?subject='+encodeURIComponent('Audit ModaStyle — '+names+' — '+group)+'&body='+encodeURIComponent(getReport())}
+</script>
+</body>
+</html>
